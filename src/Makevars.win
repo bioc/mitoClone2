@@ -3,40 +3,14 @@
 ## See Rhtslib's vignette for details.
 ## taken and adapted from deepSNV
 
-RHTSLIB_LIBS=$(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e \
-#     'Rhtslib::pkgconfig("PKG_LIBS")')
-RHTSLIB_CPPFLAGS=$(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e \
-#     'Rhtslib::pkgconfig("PKG_CPPFLAGS")')
+RHTSLIB_LIBS=$(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'Rhtslib::pkgconfig("PKG_LIBS")')
+RHTSLIB_CPPFLAGS=$(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'Rhtslib::pkgconfig("PKG_CPPFLAGS")')
 
 PKG_LIBS=$(RHTSLIB_LIBS)
 PKG_CPPFLAGS=$(RHTSLIB_CPPFLAGS)
 
 PKG_LIBS+=-L${LOCAL_SOFT}/lib${R_ARCH} -lcurl -lrtmp -lssl -lssh2 -lcrypto -lgdi32 -lz -lws2_32 -lwldap32 -lwinmm
 PKG_LIBS+=-lcrypt32 
-ifeq ("${R_ARCH}","/i386")
-	PKG_LIBS+=-lidn
-endif
-
-
-# RHTSLIB_LIBS=$(shell echo 'Rhtslib::pkgconfig("PKG_LIBS")'|\
-#     "${R_HOME}/bin${R_ARCH_BIN}/bin/R" --vanilla --slave)
-# RHTSLIB_CPPFLAGS=$(shell echo 'Rhtslib::pkgconfig("PKG_CPPFLAGS")'|\
-#     "${R_HOME}/bin${R_ARCH_BIN}/R" --vanilla --slave)
-
-# PKG_LIBS=$(RHTSLIB_LIBS)
-# PKG_CPPFLAGS=$(RHTSLIB_CPPFLAGS)
-
-# CXX_STD = CXX11
-
-# ZLIB_CFLAGS+=$(shell echo 'zlibbioc::pkgconfig("PKG_CFLAGS")'|\
-# 	"${R_HOME}/bin${R_ARCH_BIN}/R" --vanilla --slave)
-# PKG_LIBS+=$(shell echo 'zlibbioc::pkgconfig("PKG_LIBS_shared")' |\
-# 	"${R_HOME}/bin${R_ARCH_BIN}/R" --vanilla --slave)
-# %.o: %.c
-# 	$(CC) $(ZLIB_CFLAGS) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
-
-# %.o: %.cpp
-# 	$(CXX) $(ZLIB_CFLAGS) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
 
 
 ## fix for compilationg of external SCITE package courtesy of Mike Smith
@@ -51,3 +25,13 @@ copying: scite
 
 scite:
 	$(CXX) $(PKG_CPPFLAGS) SCITEpkg/*.cpp -o scite
+
+
+RHTSLIB_LIBS=$(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'Rhtslib::pkgconfig("PKG_LIBS")')
+RHTSLIB_CPPFLAGS=$(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript" -e 'Rhtslib::pkgconfig("PKG_CPPFLAGS")')
+
+PKG_LIBS=$(RHTSLIB_LIBS)
+PKG_CPPFLAGS=$(RHTSLIB_CPPFLAGS)
+
+PKG_LIBS+=-L${LOCAL_SOFT}/lib${R_ARCH} -lcurl -lrtmp -lssl -lssh2 -lcrypto -lgdi32 -lz -lws2_32 -lwldap32 -lwinmm
+PKG_LIBS+=-lcrypt32

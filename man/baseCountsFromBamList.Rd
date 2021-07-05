@@ -7,7 +7,7 @@
 baseCountsFromBamList(
   bamfiles,
   sites = "chrM:1-16569",
-  ncores = 2,
+  ncores = 1,
   ignore_nonstandard = FALSE
 )
 }
@@ -16,7 +16,7 @@ baseCountsFromBamList(
 
 \item{sites}{String specifying genomic regions, defaults to the entire mitochondrial genome.}
 
-\item{ncores}{Number of threads to use for the computation. Default 2}
+\item{ncores}{Number of threads to use for the computation. Default 1}
 
 \item{ignore_nonstandard}{Ignore basecalls that are not AGCTN}
 }
