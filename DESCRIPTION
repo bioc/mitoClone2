@@ -1,7 +1,6 @@
 Package: mitoClone2
 Type: Package
-Title: Clonal population identification in single-cell RNA-seq data
-        using mitochondrial and somatic mutations
+Title: Clonal Population Identification in Single-Cell RNA-Seq Data using Mitochondrial and Somatic Mutations
 LinkingTo: Rhtslib (>= 1.13.1)
 Version: 0.99.5
 Authors@R: c( person(given = "Benjamin", family = "Story", role = c("aut", "cre"), email = "story.benjamin@gmail.com"),
