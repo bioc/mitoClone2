@@ -23,12 +23,13 @@ mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MI
     ## read in the 
     ntcountsArray <- simplify2array(BaseCounts)
     ntcountsArray <- aperm(ntcountsArray, c(1,3,2))
+    ntcountsArray <- ntcountsArray[,,c('A','T','C','G','N')]
     if(USE.REFERENCE){
         reference <- switch(genome, "hg38" = hg38.dna, "hg19" = hg19.dna, "mm10" = mm10.dna)
         reference <- reference[GenomicRanges::start(GRanges(sites)):GenomicRanges::end(GRanges(sites))]
         message(paste0('Using the UCSC ',genome,' genome as a reference for variants.'))
     }else{
-        message(paste0('The mutation names are run specific.'))
+        message(paste0('The mutation names are run specific and may include N.'))
         totalntCounts <- apply(ntcountsArray, c(1,3), sum)
         reference <- colnames(totalntCounts)[apply(totalntCounts, 1, which.max)]
     }

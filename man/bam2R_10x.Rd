@@ -16,7 +16,7 @@ bam2R_10x(
   mask = 0,
   keepflag = 0,
   max.mismatches = NULL,
-  ncores = 2,
+  ncores = 1,
   ignore_nonstandard = FALSE
 )
 }
@@ -43,7 +43,7 @@ bam2R_10x(
 
 \item{max.mismatches}{Integer indicating maximum MN value to allow in a read. Default NULL (no filter).}
 
-\item{ncores}{Integer indicating the number of threads to use for the parallel function call that summarize the results for each bam file. Default 2.}
+\item{ncores}{Integer indicating the number of threads to use for the parallel function call that summarize the results for each bam file. Default 1.}
 
 \item{ignore_nonstandard}{Boolean indicating whether or not gapped alignments, insertions, or deletions should be included in the final output. Default FALSE. If you have an inflation of spliced mitochondrial reads it is recommended to set this to TRUE.}
 }
@@ -60,7 +60,7 @@ This function uses a C interface to read the nucleotide counts on each position 
 This code is an adaption of code that was originally written by Moritz Gerstung for the deepSNV package
 }
 \examples{
-bamCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000", ncores=1)
+bamCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
 }
 \author{
 Benjamin Story (adapted from original code with permission from Moritz Gerstung)
