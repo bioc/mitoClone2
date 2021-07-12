@@ -51,6 +51,6 @@ An object of class \code{\link{mutationCalls}}
 Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies. Applies two sets of filters: In the first step, filters on coverage and minimum allele frequency to exclude potentially noisy variants; in the second step, filters against a exclusionlist of variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). These exclusionlists are created using \code{\link{mutationCallsFromCohort}}
 }
 \examples{
-LudwigFig5.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig5_mc_out.RDS"))
-LudwigFig5 <- mutationCallsFromExclusionlist(LudwigFig5.Counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
+load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
+Example <- mutationCallsFromExclusionlist(example.counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(example.counts), binarize = 0.1)
 }

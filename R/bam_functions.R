@@ -6,14 +6,17 @@
 #'@param ncores Number of threads to use for the computation. Default 1
 #'@param ignore_nonstandard Ignore basecalls that are not AGCTN
 #'@return A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromExclusionlist}} or \code{\link{mutationCallsFromCohort}}
-#'@examples baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000", ncores=1)
+#'@examples bamCounts <- baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000", ncores=1)
 #'@export
 baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=1, ignore_nonstandard=FALSE) {
+    if(!length(sites) == 1){
+        stop('Your sites parameter must be a character vector or GRanges object of length 1')
+    }
     mito.chr <- GenomicRanges::GRanges(sites)
     mc.out <- parallel::mclapply(bamfiles, function(bampath){
         bam.file <- deepSNV::bam2R(bampath, chr = GenomicRanges::seqnames(mito.chr),start = GenomicRanges::start(mito.chr), stop = GenomicRanges::end(mito.chr))
-        bam.file.sub <- bam.file[,12:19]
-        bam.file <- bam.file[,1:8]
+        bam.file.sub <- bam.file[,c("a","t","c","g","_","n","ins","del")]
+        bam.file <- bam.file[,c("A","T","C","G","-","N","INS","DEL")]
         bam.file <- bam.file + bam.file.sub
         if(ignore_nonstandard){
             bam.file <- bam.file[,c('A','T','C','G','N')]
@@ -31,7 +34,7 @@ baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=1, ig
 #' This code is an adaption of code that was originally written by Moritz Gerstung for the deepSNV package
 #' 
 #' @param file The file location of the BAM file as a string.
-#' @param sites The chromosome locations of interest in BED format as a string.
+#' @param sites The chromosome locations of interest in BED format as a string. Alternatively a single GRanges object will also work.
 #' @param q An optional cutoff for the nucleotide Phred quality. Default q = 25. Nucleotides with Q < q will be masked by 'N'.
 #' @param mq An optional cutoff for the read mapping quality. Default mq = 0 (no filter). reads with MQ < mq will be discarded.
 #' @param s Optional choice of the strand. Defaults to s = 2 (both).
@@ -52,6 +55,9 @@ baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=1, ig
 #' @export bam2R_10x
 #' 
 bam2R_10x <- function(file, sites="MT:1-16569", q=25, mq=0, s=2, head.clip = 0, max.depth=1000000, verbose=FALSE, mask=0, keepflag=0, max.mismatches=NULL,ncores=1,ignore_nonstandard=FALSE){
+     if(!length(sites) == 1){
+        stop('Your sites parameter must be a character vector or GRanges object of length 1')
+    }
     mito.chr <- GenomicRanges::GRanges(sites)
     chr = GenomicRanges::seqnames(mito.chr)
     start = GenomicRanges::start(mito.chr)
@@ -76,8 +82,8 @@ bam2R_10x <- function(file, sites="MT:1-16569", q=25, mq=0, s=2, head.clip = 0, 
     barcode.n <- names(result)
     result <- parallel::mclapply(result,function(mat){
         bam.file <- matrix(mat, nrow=stop-start+1,dimnames = list(NULL,c('A','T','C','G','-','N','INS','DEL','HEAD','TAIL','QUAL','a','t','c','g','_','n','ins','del','head','tail','qual')))
-        bam.file.sub <- bam.file[,12:19]
-        bam.file <- bam.file[,1:8]
+        bam.file.sub <- bam.file[,c("a","t","c","g","_","n","ins","del")]
+        bam.file <- bam.file[,c("A","T","C","G","-","N","INS","DEL")]
         bam.file <- bam.file + bam.file.sub
         if(ignore_nonstandard){
             bam.file <- bam.file[,c('A','T','C','G','N')]

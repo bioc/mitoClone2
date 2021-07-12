@@ -21,7 +21,7 @@ mutationCallsFromCohort(
 \arguments{
 \item{BaseCounts}{A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}} or \code{\link{bam2R_10x}}.}
 
-\item{sites}{Vector specifying genomic regions, defaults to the entire mitochondrial genome.}
+\item{sites}{Vector specifying genomic regions, defaults to the entire mitochondrial genome. Excepts a string but may be included as a GRanges object.}
 
 \item{patient}{A character vector associating each cell / entry in the \code{BaseCount} list with a patient}
 
@@ -48,6 +48,7 @@ A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and 
 Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies measured in single cells from several individuals. Applies two sets of filters: In the first step, filters on coverage to include potentially noisy variants; in the second step, compares allele frequencies between patients to remove variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). The exclusionlist derived from the original Velten et al. 2021 dataset is available internal and can be used on single individuals using \code{\link{mutationCallsFromExclusionlist}}
 }
 \examples{
-BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
-mutCalls <- mutationCallsFromCohort(BaseCounts,patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),MINCELL=1,MINFRAC=0,MINCELLS.PATIENT=1,genome='mm10',sites="chrM:1-15000")
+sites.gr <- GenomicRanges::GRanges("chrM:1-15000")
+BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites=sites.gr)
+mutCalls <- mutationCallsFromCohort(BaseCounts,patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),MINCELL=1,MINFRAC=0,MINCELLS.PATIENT=1,genome='mm10',sites=sites.gr)
 }

@@ -3,7 +3,7 @@
 #'Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies measured in single cells from several individuals. Applies two sets of filters: In the first step, filters on coverage to include potentially noisy variants; in the second step, compares allele frequencies between patients to remove variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). The exclusionlist derived from the original Velten et al. 2021 dataset is available internal and can be used on single individuals using \code{\link{mutationCallsFromExclusionlist}}
 #'@param BaseCounts A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}} or \code{\link{bam2R_10x}}.
 #'@param patient A character vector associating each cell / entry in the \code{BaseCount} list with a patient
-#'@param sites Vector specifying genomic regions, defaults to the entire mitochondrial genome.
+#'@param sites Vector specifying genomic regions, defaults to the entire mitochondrial genome. Excepts a string but may be included as a GRanges object.
 #'@param MINREADS Minimum number of reads on a site in a single cell to qualify the site as covered
 #'@param MINCELL Minimum number of cells across the whole data set to cover a site
 #'@param MINFRAC Fraction of reads on the mutant allele to provisionally classify a cell as mutant
@@ -13,13 +13,16 @@
 #'@param USE.REFERENCE Boolean. The variant calls will be of the format REF>ALT where REF is decided based on the selected \code{genome} annotation. If set to FALSE, the reference allele will be the most abundant.
 #'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
 #'@return A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and an entry named \code{exclusionlist} containing a exclusionlist of sites with variants in several individuals
-#'@examples BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
-#'mutCalls <- mutationCallsFromCohort(BaseCounts,patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),MINCELL=1,MINFRAC=0,MINCELLS.PATIENT=1,genome='mm10',sites="chrM:1-15000")
+#'@examples sites.gr <- GenomicRanges::GRanges("chrM:1-15000")
+#'BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites=sites.gr)
+#'mutCalls <- mutationCallsFromCohort(BaseCounts,patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),MINCELL=1,MINFRAC=0,MINCELLS.PATIENT=1,genome='mm10',sites=sites.gr)
 #'@export
 mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MINCELL = 20, MINFRAC = 0.1, MINCELLS.PATIENT = 10, MINFRAC.PATIENT = 0.01, MINFRAC.OTHER = 0.1, USE.REFERENCE = TRUE, genome = 'hg38'){
-    message("Making sure 'sites' parameter is set:")
+    message("Making sure 'sites' parameter is set correctly...")
+    if(!length(sites) == 1){
+        stop('Your sites parameter must be a character vector or GRanges object of length 1')
+    }
     GenomicRanges::GRanges(sites)
-    message("Done")
     ## read in the 
     ntcountsArray <- simplify2array(BaseCounts)
     ntcountsArray <- aperm(ntcountsArray, c(1,3,2))
@@ -27,9 +30,9 @@ mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MI
     if(USE.REFERENCE){
         reference <- switch(genome, "hg38" = hg38.dna, "hg19" = hg19.dna, "mm10" = mm10.dna)
         reference <- reference[GenomicRanges::start(GRanges(sites)):GenomicRanges::end(GRanges(sites))]
-        message(paste0('Using the UCSC ',genome,' genome as a reference for variants.'))
+        message(paste0('Looks good. Using the UCSC ',genome,' genome as a reference for variants.'))
     }else{
-        message(paste0('The mutation names are run specific and may include N.'))
+        message(paste0('Looks good. However, the mutation names are run specific and may include N.'))
         totalntCounts <- apply(ntcountsArray, c(1,3), sum)
         reference <- colnames(totalntCounts)[apply(totalntCounts, 1, which.max)]
     }
@@ -37,7 +40,7 @@ mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MI
     total_cov_per_cell <- rowSums(colSums(ntcountsArray))
     
     ## make the mutation calls per var
-    variant_calls <- lapply(1:length(reference), function(pos) {
+    variant_calls <- lapply(seq_along(reference), function(pos) {
         ## check which position have at least MINREADS total reads in each cell
         support <- apply(ntcountsArray[pos,,] >= MINREADS,2,sum )
         ## check which position have at least MINREADS total reads in each cell
@@ -118,19 +121,20 @@ mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MI
 #'@param ncores number of cores to use for tabulating potential variants (defaults to 2)
 #'@param ... Parameters passed to \code{\link{mutationCallsFromMatrix}}
 #'@return An object of class \code{\link{mutationCalls}}
-#'@examples LudwigFig5.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig5_mc_out.RDS"))
-#'LudwigFig5 <- mutationCallsFromExclusionlist(LudwigFig5.Counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
+#'@examples load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
+#'Example <- mutationCallsFromExclusionlist(example.counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(example.counts), binarize = 0.1)
 #'@export
 mutationCallsFromExclusionlist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.num.samples=0.01*length(BaseCounts), min.af.universal =min.af, universal.var.cells=0.95*length(BaseCounts), exclusionlists.use = exclusionlists, max.var.na = 0.5, max.cell.na = 0.95, genome='hg38',ncores=1,...) {
     mito.dna <- switch(genome, "hg38" = hg38.dna, "hg19" = hg19.dna, "mm10" = mm10.dna)
     varaf <- parallel::mclapply(BaseCounts,function(x){
         ## focus on A,G,C,T
-        x <- x[,1:4]
+        x <- x[,c('A','T','C','G')]
         ## find cell that have less than 100 cov over agct at a given pos
         zeroes <- rowSums(x) < lim.cov
         ## af calc
-        ##x.af <- x/rowSums(x)
-        x.af <- x / (x+apply(x,1,max))
+        x.af <- x/rowSums(x)
+        ## alleleRatio
+        ##x.af <- x / (x+apply(x,1,max))
         x.af <- reshape2::melt(x.af)
         colnames(x.af) <- c('pos','nt','af')
         ## remove reference af's
@@ -198,7 +202,7 @@ mut2GR <- function(mut) {
 #'known.variants <- c("9000 T>C","1234 G>A","1337 G>A")
 #'counts.known.vars <- pullcountsVars(LudwigFig7.Counts, vars=known.variants)
 #'@export
-pullcountsVars <- function(BaseCounts,vars, cells=NULL){
+pullcountsVars <- function(BaseCounts, vars, cells=NULL){
   var.gr <- mut2GR(vars)
   ## subset cells of interest if appropriate
   if(!is.null(cells)){

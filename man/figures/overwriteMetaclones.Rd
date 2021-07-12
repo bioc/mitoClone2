@@ -20,6 +20,6 @@ The function \code{\link{clusterMetaclones}} provides an automated way to group 
 \examples{
 P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
 new.n <- seq(17)
-names(new.n) <- names(P1@mut2clone)
+names(new.n) <- names(getMut2Clone(P1))
 P1.newid <- overwriteMetaclones(P1,new.n)
 }

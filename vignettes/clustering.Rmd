@@ -23,6 +23,10 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
+load(system.file("extdata/M_P1.RData",package = "mitoClone2"))
+load(system.file("extdata/N_P1.RData",package = "mitoClone2"))
+load(system.file("extdata/M_P2.RData",package = "mitoClone2"))
+load(system.file("extdata/N_P2.RData",package = "mitoClone2"))
 P1 <- mutationCallsFromMatrix(as.matrix(M_P1), as.matrix(N_P1))
 P2 <- mutationCallsFromMatrix(as.matrix(M_P2), as.matrix(N_P2))
 ```
@@ -30,8 +34,9 @@ P2 <- mutationCallsFromMatrix(as.matrix(M_P2), as.matrix(N_P2))
 A first important step is to decide which mutations to include in the clustering. The default is to use all mutations that are covered in at least 20% of the cells, but this assignment can be changed manually. For P2, we removed two variants that were mutant in a small fraction of cells. Feel free to include them or not, it barely affects the result.
 
 ```{r select}
-P2@cluster["X9010GC"] <- FALSE
-P2@cluster["X2392TC"] <- FALSE
+P2.candidates <- getVarsCandidate(P2)
+P2.candidates[c("X9010GC","X2392TC")] <- FALSE
+P2 <- setVarsCandidate(P2,P2.candidates)
 ```
 
 ## Compute a phylogenetic tree
@@ -49,12 +54,7 @@ P1 <- varCluster(P1, tempfolder=paste0(tmpd,'/p1'),method='SCITE')
 P2 <- varCluster(P2, tempfolder=paste0(tmpd,'/p2'),method='SCITE')
 ```
 
-This step can take a while to run. It computes a likely phylogenetic tree of all the mutations. In the case of SCITE, multiple equally likely tree can be produced. In it's current state, this package simply selects the first one from the list. Furthermore, SCITE may associate cells with different potential If you have graphviz (`dot`) installed, you can create postscript files displaying these plots:
-
-```{r plotTree}
-mitoClone2:::plotTree(P1,file = "P1.ps")
-mitoClone2:::plotTree(P2,file = "P2.ps")
-```
+This step can take a while to run. It computes a likely phylogenetic tree of all the mutations. In the case of SCITE, multiple equally likely tree can be produced. In it's current state, this package simply selects the first tree from the list.
 
 ## Identify clones and assign cells to clones
 
@@ -99,4 +99,7 @@ P1.new <- mitoClone2:::overwriteMetaclones(P1, m2c)
 plotClones(P1.new)
 ```
 
- 
+## Session information
+```{r label='Session information', eval=TRUE, echo=FALSE}
+sessionInfo()
+```

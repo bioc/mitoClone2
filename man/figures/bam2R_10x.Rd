@@ -23,7 +23,7 @@ bam2R_10x(
 \arguments{
 \item{file}{The file location of the BAM file as a string.}
 
-\item{sites}{The chromosome locations of interest in BED format as a string.}
+\item{sites}{The chromosome locations of interest in BED format as a string. Alternatively a single GRanges object will also work.}
 
 \item{q}{An optional cutoff for the nucleotide Phred quality. Default q = 25. Nucleotides with Q < q will be masked by 'N'.}
 

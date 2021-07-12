@@ -18,11 +18,12 @@ Returns the same list of mutations excluding those, if any, that fall within the
 Mutations co-occuring at the same genomic position may often be the result of sequencing artifacts or technical biases. In cases where the user which to drop these from a result this function may be used. ONLY WORKS FOR MITOCHONDRIAL MUTATIONS.
 }
 \examples{
+load(system.file("extdata/M_P1.RData",package = "mitoClone2"))
+load(system.file("extdata/N_P1.RData",package = "mitoClone2"))
 P1 <- mutationCallsFromMatrix(as.matrix(M_P1), as.matrix(N_P1))
-P1.muts <- names(P1@cluster)
+P1.muts <- names(getVarsCandidate(P1))
 P1.muts <- P1.muts[grep('DEL',P1.muts,invert=TRUE)]
 P1.muts <- P1.muts[grep('^X[0-9]+',P1.muts)]
 names(P1.muts) <- gsub("^X","",gsub("(\\\\d+)([AGCT])([AGCT])","\\\\1 \\\\2>\\\\3",P1.muts))
 P1.muts <- P1.muts[removeWindow(names(P1.muts))]
-P1@cluster <- P1@cluster[names(P1@cluster) \%in\% P1.muts]
 }

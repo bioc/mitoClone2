@@ -4,12 +4,12 @@
 \alias{plotClones}
 \title{Plot clonal assignment of single cells}
 \usage{
-plotClones(mutcalls, what = "alleleRatio", show = c(), ...)
+plotClones(mutcalls, what = c("alleleFreq", "ternary"), show = c(), ...)
 }
 \arguments{
 \item{mutcalls}{object of class \code{\link{mutationCalls}}.}
 
-\item{what}{One of the following: \emph{alleleRatio}: The fraction of reads mapping to the mutant allele or \emph{ternary}: Ternarized mutation status}
+\item{what}{One of the following: \emph{alleleFreq}: The fraction of reads mapping to the mutant allele or \emph{ternary}: Ternarized mutation status}
 
 \item{show}{boolean vector specifying for each mutation if it should be plotted on top of the heatmap as metadata; defaults to mutations not used for the clustering \code{!mutcalls@cluster}}
 

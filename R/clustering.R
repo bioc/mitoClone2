@@ -16,14 +16,14 @@
 #'@return an object of class \code{\link{mutationCalls}}, with an inferred tree structure and cell to clone assignment added.
 #'@export
 
-varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, tempfolder = tempdir(), python_env = '',force_recalc = FALSE, method = 'PhISCS') {
+varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, tempfolder = tempdir(), python_env = '',force_recalc = FALSE, method = 'SCITE') {
     ##prepare data and run PhISCS
     suppressWarnings(dir.create(tempfolder))
     
     usedata <- mutcalls@ternary[,mutcalls@cluster]
     if(!method %in% c('PhISCS','SCITE')){
-        message('No method selected, defaulting to PhISCS-I')
-        method <- 'PhISCS'
+        message('No method selected, defaulting to SCITE')
+        method <- 'SCITE'
     }
     if (!file.exists(file.path(tempfolder, "out"))) {
         message(paste0('Creating temporary dir: ',file.path(tempfolder,'out'),' for PhISCS run.'))
@@ -32,13 +32,13 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
     if(method == 'PhISCS'){
         write.table(usedata, file = file.path(tempfolder,"in.txt"), quote = FALSE, sep="\t",
                     row.names = gsub("[><_]","",rownames(usedata)),col.names = gsub("[><_]","",colnames(usedata)))                
-        if(!system("which PhISCS", intern = FALSE, ignore.stderr = TRUE, ignore.stdout = TRUE) == "0"){
-            stop("PhISCS not detected on your system!")
-        }else{
-            ##base <- system.file("extdata/python/PhISCS-I",package = "mitoClone")
-            base <- system("which samtools",intern=TRUE)
-        }
-
+        ## if(!system("which PhISCS", intern = FALSE, ignore.stderr = TRUE, ignore.stdout = TRUE) == "0"){
+        ##     stop("PhISCS not detected on your system!")
+        ## }else{
+        ##     ##base <- system.file("extdata/python/PhISCS-I",package = "mitoClone")
+        ##     base <- system("which samtools",intern=TRUE)
+        ## }
+        base <- 'PhISCS-I'
         command <- sprintf("%spython %s -SCFile %s -fn %.2f -fp %.2f -o %s -threads %d -time %d --drawTree",
                            ifelse(python_env =="", "", paste0(python_env,"; ")),
                            base, file.path(tempfolder,"in.txt"),
@@ -46,8 +46,9 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
                            file.path(tempfolder,"out"),
                            cores, time)
         if (!file.exists(file.path(tempfolder, "out", "in.CFMatrix")) | force_recalc) {
-            message("Now running the following command:", command)
-            tryCatch(system(command), error = function(e) stop("PhISCS error: ",e,"Make sure that the gurobi python package is available and consider specifying python_env."))
+            ##message("Now running the following command:", command)
+            message("Please run the following command with PhISCS-I:", command)
+            ##tryCatch(system(command), error = function(e) stop("PhISCS error: ",e,"Make sure that the gurobi python package is available and consider specifying python_env."))
         } else {
             message("Results found, skipping PhISCS run")
         }
@@ -70,7 +71,6 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
         }else{
             base <- system.file("libs/scite.exe",package = "mitoClone2")
         }
-        
         command <- sprintf("%s %s -i %s -names %s -n %d -max_treelist_size 1 -a -m %d -r 1 -l 200000 -ad %.2f -fd %.2f -o %s",
                            ifelse(python_env =="", "", paste0(python_env,"; ")),
                            base, file.path(tempfolder,"input_scite.txt"),
@@ -109,8 +109,8 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
         scite.cells$real <- cell.names[as.numeric(gsub("^s","",scite.cells$X2))+1]
         ##  states = number of mutations possible
         mutcalls@tree <- list(states = rep(0, nrow(scite.tree)),
-		   children = list(),
-		   mutation = "root")
+                              children = list(),
+                              mutation = "root")
         names(mutcalls@tree$states) <- scite.tree$end
         ## consider merging clones into the scite.tree
         ##clones <- data.frame(scite.tree)
@@ -155,27 +155,30 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
         scite <- data.frame(do.call(rbind,scite.cells.multi.pre))
         cell.mutations <- scite
     }
-                                        #retrieve the assignment for every cell
-                                        #compute likelihood of assignments
+    ##retrieve the assignment for every cell
+    ##compute likelihood of assignments
     
     cell2clone.prob <- apply(usedata[,nodes.order],1, function(cell) {
-        apply(clones[,nodes.order], 1, function(clone){
-                                        #likelihood
+	apply(clones[,nodes.order], 1, function(clone){
+					#likelihood
             sum(log10(ifelse(cell == "0" & clone == 1, fn,
-                      ifelse(cell == "1" & clone == 0, fp,
-                      ifelse(cell == "?", 1, (1-fn) * (1-fp))))))
-	})
+		      ifelse(cell == "1" & clone == 0, fp,
+		      ifelse(cell == "1" & clone == 1, 1-fn,
+		      ifelse(cell == "0" & clone == 0, 1-fp,
+		      ifelse(cell == "?", 1, (1-fn) * (1-fp))))))))
+        })
     })
     mutcalls@cell2clone <- t(apply(cell2clone.prob, 2, function(x) {
 	10^x / sum(10^x)
-    }))
-    
-    
+    }))    
     ##finally, determine which mutations to group:
     evaluate_likelihood <- function(data, idealized) {
         sum(log10(ifelse(data == "0" & idealized == 1, fn,
                   ifelse(data == "1" & idealized == 0, fp,
-                  ifelse(data == "?", 1, (1-fn) * (1-fp))))))
+                  ifelse(data == "1" & idealized == 1, 1-fn,
+                  ifelse(data == "0" & idealized == 0, 1-fp,
+                  ifelse(data == "?", 1, (1-fn) * (1-fp))))))))
+        
     }
     ## if(method == 'PhISCS'){
     ##   ref <- evaluate_likelihood(usedata[,colnames(physics)], physics)
@@ -214,13 +217,14 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
 #'@param x A list of strings that comprise sites that will be filtered
 #'@param window Integer of how close mutations must be to one another (in bp) to be removed
 #'@return Returns the same list of mutations excluding those, if any, that fall within the same window =
-#'@examples P1 <- mutationCallsFromMatrix(as.matrix(M_P1), as.matrix(N_P1))
-#' P1.muts <- names(P1@cluster)
+#'@examples load(system.file("extdata/M_P1.RData",package = "mitoClone2"))
+#' load(system.file("extdata/N_P1.RData",package = "mitoClone2"))
+#' P1 <- mutationCallsFromMatrix(as.matrix(M_P1), as.matrix(N_P1))
+#' P1.muts <- names(getVarsCandidate(P1))
 #' P1.muts <- P1.muts[grep('DEL',P1.muts,invert=TRUE)]
 #' P1.muts <- P1.muts[grep('^X[0-9]+',P1.muts)]
 #' names(P1.muts) <- gsub("^X","",gsub("(\\d+)([AGCT])([AGCT])","\\1 \\2>\\3",P1.muts))
 #' P1.muts <- P1.muts[removeWindow(names(P1.muts))]
-#' P1@cluster <- P1@cluster[names(P1@cluster) %in% P1.muts]
 #'@export
 removeWindow <- function(x,window=1){
     if(any(sapply(x,grepl,'^[A-Z]'))){ stop('Non-standard variant name detected. Please only provide variant coordinates in the following format: 1337 G>A')}
@@ -345,17 +349,12 @@ mitoPlot <- function(variants,patient=NULL,genome='hg38',showLegend=TRUE,showLab
       plot.df <- rbind(mito.genes.df,var.df[,colnames(mito.genes.df)])
   }
   ## prepare to plot
-  if(showLegend){
-    p <- ggplot2::ggplot(data=subset(plot.df,type=='mito'), ggplot2::aes(x = start, y=12, color=gene)) + ggplot2::geom_hline(yintercept=12, color = "black",alpha=1) + ggplot2::geom_line(size=4)+ ggplot2::theme_void(base_size=24) + ggplot2::xlab('') + ggplot2::ylab('') + ggplot2::theme(legend.position = "top", axis.text.x = ggplot2::element_blank()) + ggplot2::scale_color_manual(values=mito.gene.color) + ggplot2::geom_point(data=subset(plot.df,type == 'mutation'),size=5, ggplot2::aes(x = start, y = 12), color=subset(plot.df,type == 'mutation')$strand)  + ggplot2::coord_polar() + ggplot2::facet_wrap(~sample) + ggplot2::ylim(0,13)
-  }else{
-    p <- ggplot2::ggplot(data=subset(plot.df,type=='mito'), ggplot2::aes(x = start, y=12, color=gene)) + ggplot2::geom_hline(yintercept=12, color = "black",alpha=1) + ggplot2::geom_line(size=4)+ ggplot2::theme_void(base_size=24) + ggplot2::xlab('') + ggplot2::ylab('') + ggplot2::theme(legend.position = "none",axis.text.x = ggplot2::element_blank()) + ggplot2::scale_color_manual(values=mito.gene.color) + ggplot2::geom_point(data=subset(plot.df,type == 'mutation'),size=5, ggplot2::aes(x = start, y = 12), color=subset(plot.df,type == 'mutation')$strand) + ggplot2::coord_polar() + ggplot2::facet_wrap(~sample) + ggplot2::ylim(0,13)
-  }
+  legendPos <- ifelse(showLegend,"top","none")
+  p <- ggplot2::ggplot(data=subset(plot.df,type=='mito'), ggplot2::aes(x = start, y=12, color=gene)) + ggplot2::geom_hline(yintercept=12, color = "black",alpha=1) + ggplot2::geom_line(size=4)+ ggplot2::theme_void(base_size=24) + ggplot2::xlab('') + ggplot2::ylab('') + ggplot2::theme(legend.position = legendPos, axis.text.x = ggplot2::element_blank()) + ggplot2::scale_color_manual(values=mito.gene.color) + ggplot2::geom_point(data=subset(plot.df,type == 'mutation'),size=5, ggplot2::aes(x = start, y = 12), color=subset(plot.df,type == 'mutation')$strand) + ggplot2::coord_polar() + ggplot2::facet_wrap(~sample) + ggplot2::ylim(0,13)
   if(showLabel){
-    p <- p + ggplot2::geom_text(data=subset(plot.df,type == 'mutation'),ggplot2::aes(x = start, y = 12, label = gene),color='black',nudge_y = -3)
-    p
-  }else{
-    p
+      p <- p + ggplot2::geom_text(data=subset(plot.df,type == 'mutation'),ggplot2::aes(x = start, y = 12, label = gene),color='black',nudge_y = -3)
   }
+  p
 }
 
 
@@ -367,7 +366,7 @@ mitoPlot <- function(variants,patient=NULL,genome='hg38',showLegend=TRUE,showLab
 #'@return Returns the provided \code{\link{mutationCalls}} class object with the 'mainClone' metadata overwritten with the manual values provided by the user.
 #'@examples P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
 #' new.n <- seq(17)
-#' names(new.n) <- names(P1@mut2clone)
+#' names(new.n) <- names(getMut2Clone(P1))
 #' P1.newid <- overwriteMetaclones(P1,new.n)
 #'@export
 overwriteMetaclones <- function(mutcalls, mutation2clones) {

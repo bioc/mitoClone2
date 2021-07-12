@@ -13,7 +13,7 @@ varCluster(
   tempfolder = tempdir(),
   python_env = "",
   force_recalc = FALSE,
-  method = "PhISCS"
+  method = "SCITE"
 )
 }
 \arguments{

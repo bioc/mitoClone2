@@ -116,83 +116,53 @@ The function `mutationCallsFromCohort` performs filtering based on mutations sha
 *   `genome` The mitochondrial genome reference used for the sample(s) being investigated. Please note that this is the UCSC standard chromosome sequence. It is VITAL to double check that the proper genome and sites options are provided that are congruent with the annotations of your bam file. Default: hg38.
 
 
-To exemplify the use of these functions we are going to recreate figures from a previously published data set. In this case, one of the first papers to recognize the use of mitochondrial variants in single-cell sequencing. Ludwig et al., 2019 Lineage Tracing in Humans Enabled by Mitochondrial Mutations and Single-Cell Genomics. *Cell*. 2019 Mar 7;176(6):1325-1339.e22. doi: 10.1016/j.cell.2019.01.022 https://pubmed.ncbi.nlm.nih.gov/30827679/.
+To exemplify the use of these functions we are going to build a figure based on data from a previously published data set. In this case, one of the first papers to recognize the use of mitochondrial variants in single-cell sequencing. Ludwig et al., 2019 Lineage Tracing in Humans Enabled by Mitochondrial Mutations and Single-Cell Genomics. *Cell*. 2019 Mar 7;176(6):1325-1339.e22. doi: 10.1016/j.cell.2019.01.022 https://pubmed.ncbi.nlm.nih.gov/30827679/.
 
 In this example, as a proof-of-concept, the experimenters used donor hematopoietic stem and progenitor cells (HSPCs) to derive cell colonies and then isolated cells from each for single-cell sequencing. As expected, the cells that were isolated from the same colony tended exhibit identical mitochondrial variants (i.e. they are indeed clonal).
 
 
-## Example Ludwig et al., Figure 5 **Exclusionlist filtering**
+## Example of **Exclusionlist filtering**
 
-```{r fig5exclusionlist,fig.width = 6, fig.height=4}
+```{r exclusionlist,fig.width = 6, fig.height=4}
 library(mitoClone2)
 library(pheatmap)
 
-## downloaded pre-processed baseCounts type object 
-LudwigFig5.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig5_mc_out.RDS"))
-LudwigFig5.Counts <- lapply(LudwigFig5.Counts, function(x) x[,c('A','T','C','G','N')])
+## load our count data
+load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
 
-## investigate what the ideal baseCounts object looks like
-print(head(LudwigFig5.Counts[[1]]))
+## investigate what our ideal baseCounts object looks like (it has been subset to only 55 sites)
+print(head(example.counts[[1]]))
 
 ## calling mutations using our exclusionlist
-LudwigFig5 <- mutationCallsFromExclusionlist(LudwigFig5.Counts, min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
+Example <- mutationCallsFromExclusionlist(example.counts, min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(example.counts), binarize = 0.1)
 
 ## setting up the meta data
-LudwigFig5.meta <- data.frame(row.names = rownames(LudwigFig5@N), Clone = gsub("_.*","",gsub("Donor1_","",rownames(LudwigFig5@N))))
+Example.rawnames <- getAlleleCount(Example,'nonmutant')
+Example.meta <- data.frame(row.names = rownames(Example.rawnames), Clone = gsub("_.*","",gsub("Donor1_","",rownames(Example.rawnames))))
 
-## showing the clustering via heatmap
-clustered <- quick_cluster(LudwigFig5, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2", annotation_col = LudwigFig5.meta,show_colnames=FALSE,fontsize_row = 7)
+## showing the clustering via heatmap (notice only 20 mutations were retained)
+clustered <- quick_cluster(Example, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2", annotation_col = Example.meta,show_colnames=FALSE,fontsize_row = 7)
 
 ```
 
-## Example Ludwig et al., Figure 5 **Cohort filtering**
-Now (knowing the original parental colony) we apply **cohort filtering** to reproduce Figure 5H.
+## Example of **Cohort filtering**
+Now (knowing the original parental colony from the publication) we apply **cohort filtering** to revealing similar results.
 
-```{r fig5cohort,fig.width = 6, fig.height=4}
-## calling mutations using our clone information
-LudwigFig5 <- mutationCallsFromCohort(LudwigFig5.Counts, MINFRAC=0.01, MINCELL=8, MINCELLS.PATIENT=5, patient = LudwigFig5.meta$Clone, sites='chrM:1-16569')
+```{r cohort,fig.width = 6, fig.height=4}
+## Calling mutations using our known clonal information
+Example <- mutationCallsFromCohort(example.counts, MINFRAC=0.01, MINCELL=8, MINCELLS.PATIENT=5, patient = Example.meta$Clone, sites='chrM:1-55')
 ## check the variants for a specific cluster
-print(colnames(LudwigFig5$C112@M))
-private.mutations <- unique(unlist(lapply(LudwigFig5[grep('^C',names(LudwigFig5))][unlist(lapply(LudwigFig5[grep('^C',names(LudwigFig5))],function(x) !is.null(x)))],function(y) names(y@cluster))))
-private.mutations.df <- pullcountsVars(LudwigFig5.Counts, gsub("X(\\d+)([AGCT])\\.([AGCT])","\\1 \\2>\\3",private.mutations))
+print(colnames(getAlleleCount(Example$C112,'mutant')))
+private.mutations <- unique(unlist(lapply(Example[grep('^C',names(Example))][unlist(lapply(Example[grep('^C',names(Example))],function(x) !is.null(x)))],function(y) names(getVarsCandidate(y)))))
+private.mutations.df <- pullcountsVars(example.counts, gsub("X(\\d+)([AGCT])\\.([AGCT])","\\1 \\2>\\3",private.mutations))
 private.mutations.df <- mutationCallsFromMatrix(t(private.mutations.df$M), t(private.mutations.df$N), cluster = rep(TRUE, length(private.mutations)))
 
-## showing the improved clustering via heatmap
-clustered <- quick_cluster(private.mutations.df, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2", annotation_col = LudwigFig5.meta,show_colnames=FALSE,fontsize_row = 7)
+## Showing the clustering looks via heatmap
+clustered <- quick_cluster(private.mutations.df, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2", annotation_col = Example.meta,show_colnames=FALSE,fontsize_row = 7)
 
 ```
 
-## Example Ludwig et al., Figure 7
-
-For this figure, we first reproduce the analysis by Ludwig et al., who performed unsupervised clustering using a set of variants identified by DNA sequencing.
-
-```{r fig7orig,fig.width = 6, fig.height=4}
-# This is the Fig7 A/B data it is only the single cells from the tumor samples (see bottom arrow of Fig7A) - It looks very messy and the healthy comparison is bulk sequencing. We aligned to the hg38 genome resulting in a one nucleotide offset for most variants.
-LudwigFig7.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS"))
-
-supervised.variants <- c("8999 T>C","4818 G>A","11126 G>A","7228 A>G","5920 G>A","15734 G>A","15043 G>A","14865 G>A","6734 G>A","12650 T>C","14804 G>A")
-hand.selected <- pullcountsVars(LudwigFig7.Counts, supervised.variants)
-hand.selected <- mutationCallsFromMatrix(t(hand.selected$M), t(hand.selected$N), cluster = rep(TRUE, length(supervised.variants)))
-
-clustered.hand <- quick_cluster(hand.selected, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2",fontsize_row = 7, show_colnames=FALSE, cutree_cols = 12, cluster_distance_col = "manhattan")
- 
-originalAnn <- data.frame(row.names = names(cutree(clustered.hand$tree_col, k=12)), Clone = as.factor(cutree(clustered.hand$tree_col, k=12)))
-
-```
-
-Then, we call mitochondrial variants de novo and cluster using the `varCluster` function, as described in more detail in the [Computation of clonal hierarchies and clustering of mutations](clustering.html) vignette.
-
-Of note, in this dataset there is quite a large number of variants present in all cells at a low level of heteroplasmy which is why we modify the `universal.var.cells` parameter accordingly.
-
-```{r fig7new,fig.width = 6, fig.height=4, message=FALSE}
-LudwigFig7 <- mutationCallsFromExclusionlist(LudwigFig7.Counts,min.af=0.1, min.num.samples=3, universal.var.cells = 0.25 * length(LudwigFig7.Counts), binarize = 0.1)
-LudwigFig7 <- varCluster(LudwigFig7,method='SCITE')
-
-LudwigFig7@metadata$original <- factor(NA, levels = unique(originalAnn$Clone))
-LudwigFig7@metadata[rownames(originalAnn), "original"] <- originalAnn$Clone
- 
-LudwigFig7 <- clusterMetaclones(LudwigFig7, plot = FALSE)
- 
-plotClones(LudwigFig7)
- 
+## Session information
+```{r label='Session information', eval=TRUE, echo=FALSE}
+sessionInfo()
 ```

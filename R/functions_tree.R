@@ -1,5 +1,3 @@
-
-
 attach2tree <- function(tree, clone, mutation =NULL) {
   if (length(tree$children) == 0) { #change!
     if (is.null(mutation)) mutation <- names(clone)[clone==1 & tree$states==0]
@@ -50,7 +48,7 @@ addnodesSCITE <- function(tree,current=NULL,scite.tree=scite.tree){
     }
     first.child <- which(scite.tree$start %in% current)
     if(length(first.child) == 0){
-	return(list(states = tree$states,children = list(),mutation=current))
+        return(list(states = tree$states,children = list(),mutation=current))
     }
     if(length(first.child) == 1){
         tree$children[[1]] <- list(states=tree$states,children=list(),mutation=scite.tree$end[first.child])   
