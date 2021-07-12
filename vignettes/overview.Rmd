@@ -9,7 +9,9 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+  tidy.opts=list(width.cutoff=70),
+  tidy=TRUE)
 ```
 ## Overview
 In this vignette, we demonstrate the ability of mitoClone2 to identify mitochondrial variants from single-cell sequencing data of a single or multiple individuals without any *a priori* knowledge of pre-existing variants by capitalizing on either an extensive exclusionlist (that removes known/potential false-positive signals) OR information shared across multiple individuals. We note here that of these methods, the second, is the most powerful. The latter strategy relies on the assumption that biological noise (e.g. RNA editing) and technical noise (arising during either library preparation, RNA sequencing, read processing, or alignment steps of the experiment) should be consistent across samples from different individuals. On this end, each individual sample can then act as essentially a technical/pseudo-replicate for identification and elimination the mentioned artifacts. In situations where only a sample from only one invidiual is analyzed, we fall back on our standard filtering method using certain parameters but in this case reinforced by pre-constructed exclusionlist including information related to homo-polymers, repeat regions, RNA editing sites, and known sequencing artifacts.
@@ -116,9 +118,9 @@ The function `mutationCallsFromCohort` performs filtering based on mutations sha
 *   `genome` The mitochondrial genome reference used for the sample(s) being investigated. Please note that this is the UCSC standard chromosome sequence. It is VITAL to double check that the proper genome and sites options are provided that are congruent with the annotations of your bam file. Default: hg38.
 
 
-To exemplify the use of these functions we are going to build a figure based on data from a previously published data set. In this case, one of the first papers to recognize the use of mitochondrial variants in single-cell sequencing. Ludwig et al., 2019 Lineage Tracing in Humans Enabled by Mitochondrial Mutations and Single-Cell Genomics. *Cell*. 2019 Mar 7;176(6):1325-1339.e22. doi: 10.1016/j.cell.2019.01.022 https://pubmed.ncbi.nlm.nih.gov/30827679/.
+To exemplify the use of these functions we are going to build a figure based on data from a previously published data set. In this case, one of the first papers to recognize the use of mitochondrial variants in single-cell sequencing. Ludwig et al., 2019 Lineage Tracing in Humans Enabled by Mitochondrial Mutations and Single-Cell Genomics. *Cell*. 2019 Mar 7;176(6):1325-1339.e22. doi: 10.1016/j.cell.2019.01.022 https://pubmed.ncbi.nlm.nih.gov/30827679/. The dataset has been shrunk substantial for this and the names of the mitochondrial mutations are randomized.
 
-In this example, as a proof-of-concept, the experimenters used donor hematopoietic stem and progenitor cells (HSPCs) to derive cell colonies and then isolated cells from each for single-cell sequencing. As expected, the cells that were isolated from the same colony tended exhibit identical mitochondrial variants (i.e. they are indeed clonal).
+In this example, as a proof-of-concept, the experimenters used donor hematopoietic stem and progenitor cells (HSPCs) to derive cell colonies and then isolated cells from each for single-cell sequencing. As expected, the cells that were isolated from the same colony tended exhibit shared mitochondrial variants (i.e. they are indeed clonal).
 
 
 ## Example of **Exclusionlist filtering**

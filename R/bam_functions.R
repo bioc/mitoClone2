@@ -8,31 +8,42 @@
 #'@return A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromExclusionlist}} or \code{\link{mutationCallsFromCohort}}
 #'@examples bamCounts <- baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000", ncores=1)
 #'@export
-baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=1, ignore_nonstandard=FALSE) {
-    if(!length(sites) == 1){
+baseCountsFromBamList <- function(bamfiles,
+                                  sites = "chrM:1-16569",
+                                  ncores = 1,
+                                  ignore_nonstandard = FALSE) {
+    if (!length(sites) == 1) {
         stop('Your sites parameter must be a character vector or GRanges object of length 1')
     }
     mito.chr <- GenomicRanges::GRanges(sites)
-    mc.out <- parallel::mclapply(bamfiles, function(bampath){
-        bam.file <- deepSNV::bam2R(bampath, chr = GenomicRanges::seqnames(mito.chr),start = GenomicRanges::start(mito.chr), stop = GenomicRanges::end(mito.chr))
-        bam.file.sub <- bam.file[,c("a","t","c","g","_","n","ins","del")]
-        bam.file <- bam.file[,c("A","T","C","G","-","N","INS","DEL")]
+    mc.out <- parallel::mclapply(bamfiles, function(bampath) {
+        bam.file <-
+            deepSNV::bam2R(
+                         bampath,
+                         chr = GenomicRanges::seqnames(mito.chr),
+                         start = GenomicRanges::start(mito.chr),
+                         stop = GenomicRanges::end(mito.chr)
+                     )
+        bam.file.sub <-
+            bam.file[, c("a", "t", "c", "g", "_", "n", "ins", "del")]
+        bam.file <-
+            bam.file[, c("A", "T", "C", "G", "-", "N", "INS", "DEL")]
         bam.file <- bam.file + bam.file.sub
-        if(ignore_nonstandard){
-            bam.file <- bam.file[,c('A','T','C','G','N')]
+        if (ignore_nonstandard) {
+            bam.file <- bam.file[, c('A', 'T', 'C', 'G', 'N')]
         }
         return(bam.file)
-    },mc.cores=ncores)
+    }, mc.cores = ncores)
     names(mc.out) <- names(bamfiles)
     return(mc.out)
 }
 
 #' Read nucleotide counts from a 10x Genomics .bam file
-#' 
+#'
 #' This function uses a C interface to read the nucleotide counts on each position of a .bam alignment. The counts are individually tabulated for each cell barcode as specified by the user. The counts of both strands are reported separately and nucleotides below a quality cutoff are masked.
 #'
 #' This code is an adaption of code that was originally written by Moritz Gerstung for the deepSNV package
-#' 
+#'
 #' @param file The file location of the BAM file as a string.
 #' @param sites The chromosome locations of interest in BED format as a string. Alternatively a single GRanges object will also work.
 #' @param q An optional cutoff for the nucleotide Phred quality. Default q = 25. Nucleotides with Q < q will be masked by 'N'.
@@ -53,43 +64,67 @@ baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=1, ig
 #' @examples bamCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
 #' @author Benjamin Story (adapted from original code with permission from Moritz Gerstung)
 #' @export bam2R_10x
-#' 
-bam2R_10x <- function(file, sites="MT:1-16569", q=25, mq=0, s=2, head.clip = 0, max.depth=1000000, verbose=FALSE, mask=0, keepflag=0, max.mismatches=NULL,ncores=1,ignore_nonstandard=FALSE){
-     if(!length(sites) == 1){
+#'
+bam2R_10x <- function(file,
+                      sites = "MT:1-16569",
+                      q = 25,
+                      mq = 0,
+                      s = 2,
+                      head.clip = 0,
+                      max.depth = 1000000,
+                      verbose = FALSE,
+                      mask = 0,
+                      keepflag = 0,
+                      max.mismatches = NULL,
+                      ncores = 1,
+                      ignore_nonstandard = FALSE) {
+    if (!length(sites) == 1) {
         stop('Your sites parameter must be a character vector or GRanges object of length 1')
     }
     mito.chr <- GenomicRanges::GRanges(sites)
     chr = GenomicRanges::seqnames(mito.chr)
     start = GenomicRanges::start(mito.chr)
     stop = GenomicRanges::end(mito.chr)
-    if(is.null(max.mismatches)) max.mismatches <- -1
-    region = paste(chr,":",start,"-",stop, sep="")
-    result = .Call("bam2R_10x",
-                   as.character(file),
-                   as.character(chr),
-                   as.integer(start),
-                   as.integer(stop),
-                   vector("integer",(stop-start+1)*11*2),
-                   as.integer(q),
-                   as.integer(mq),
-                   as.integer(s),
-                   as.integer(head.clip),
-                   as.integer(max.depth),
-                   as.integer(verbose),
-                   as.integer(mask),
-                   as.integer(keepflag),
-                   as.integer(max.mismatches))
+    if (is.null(max.mismatches))
+        max.mismatches <- -1
+    region = paste(chr, ":", start, "-", stop, sep = "")
+    result = .Call(
+        "bam2R_10x",
+        as.character(file),
+        as.character(chr),
+        as.integer(start),
+        as.integer(stop),
+        vector("integer", (stop - start + 1) * 11 * 2),
+        as.integer(q),
+        as.integer(mq),
+        as.integer(s),
+        as.integer(head.clip),
+        as.integer(max.depth),
+        as.integer(verbose),
+        as.integer(mask),
+        as.integer(keepflag),
+        as.integer(max.mismatches)
+    )
     barcode.n <- names(result)
-    result <- parallel::mclapply(result,function(mat){
-        bam.file <- matrix(mat, nrow=stop-start+1,dimnames = list(NULL,c('A','T','C','G','-','N','INS','DEL','HEAD','TAIL','QUAL','a','t','c','g','_','n','ins','del','head','tail','qual')))
-        bam.file.sub <- bam.file[,c("a","t","c","g","_","n","ins","del")]
-        bam.file <- bam.file[,c("A","T","C","G","-","N","INS","DEL")]
+    result <- parallel::mclapply(result, function(mat) {
+        bam.file <-
+            matrix(mat,
+                   nrow = stop - start + 1,
+                   dimnames = list(
+                       NULL,
+                       c('A','T','C','G','-','N','INS','DEL','HEAD','TAIL','QUAL',
+                         'a','t','c','g','_','n','ins','del','head','tail','qual')
+                   ))
+        bam.file.sub <-
+            bam.file[, c("a", "t", "c", "g", "_", "n", "ins", "del")]
+        bam.file <-
+            bam.file[, c("A", "T", "C", "G", "-", "N", "INS", "DEL")]
         bam.file <- bam.file + bam.file.sub
-        if(ignore_nonstandard){
-            bam.file <- bam.file[,c('A','T','C','G','N')]
+        if (ignore_nonstandard) {
+            bam.file <- bam.file[, c('A', 'T', 'C', 'G', 'N')]
         }
         return(bam.file)
-    },mc.cores=ncores)
+    }, mc.cores = ncores)
     names(result) <- barcode.n
     return(result)
 }
