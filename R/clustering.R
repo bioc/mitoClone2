@@ -403,9 +403,9 @@ varCluster <- function(mutcalls,
 #'(in bp) to be removed
 #'@return Returns the same list of mutations excluding those, if any,
 #'that fall within the same window =
-#'@examples load(system.file("extdata/M_P1.RData",package =
+#'@examples M_P1 <- readRS(system.file("extdata/M_P1.RDS",package =
 #'"mitoClone2"))
-#'load(system.file("extdata/N_P1.RData",package =
+#'N_P1 <- readRDS(system.file("extdata/N_P1.RDS",package =
 #'"mitoClone2"))
 #'P1 <- mutationCallsFromMatrix(as.matrix(M_P1),
 #'as.matrix(N_P1))
@@ -612,7 +612,7 @@ mitoPlot <- function(variants,
                              "darkolivegreen"
                          )
                      )(length(unique(
-                                         subset(mito.genes.df, type == 'mito')$gene
+                                         subset(mito.genes.df, mito.genes.df$type == 'mito')$gene
                                      ))), rev(c(
                                               "#F9B90AFF", "#E6352FFF", "#3D79F3FF"
                                           )))
@@ -643,19 +643,19 @@ mitoPlot <- function(variants,
     }
     ## prepare to plot
     legendPos <- ifelse(showLegend, "top", "none")
-    p <- ggplot2::ggplot(data=subset(plot.df,type=='mito'), ggplot2::aes(x = start, y=12, color=gene)) +
+    p <- ggplot2::ggplot(data=subset(plot.df,plot.df$type == 'mito'), ggplot2::aes(x = start, y=12, color=plot.df$gene)) +
       ggplot2::geom_hline(yintercept=12, color = "black",alpha=1) +
       ggplot2::geom_line(size=4) +
       ggplot2::theme_void(base_size=24) + ggplot2::xlab('') +
       ggplot2::ylab('') +
       ggplot2::theme(legend.position = legendPos, axis.text.x = ggplot2::element_blank()) +
       ggplot2::scale_color_manual(values=mito.gene.color) +
-      ggplot2::geom_point(data=subset(plot.df,type == 'mutation'),size=5, ggplot2::aes(x = start, y = 12), color=subset(plot.df,type == 'mutation')$strand) +
+      ggplot2::geom_point(data=subset(plot.df,plot.df$type == 'mutation'),size=5, ggplot2::aes(x = start, y = 12), color=subset(plot.df,plot.df$type == 'mutation')$strand) +
       ggplot2::coord_polar() +
       ggplot2::facet_wrap(~sample) +
       ggplot2::ylim(0,13)
   if(showLabel){
-      p <- p + ggplot2::geom_text(data=subset(plot.df,type == 'mutation'),ggplot2::aes(x = start, y = 12, label = gene),color='black',nudge_y = -3)
+      p <- p + ggplot2::geom_text(data=subset(plot.df,plot.df$type == 'mutation'),ggplot2::aes(x = start, y = 12, label = plot.df$gene),color='black',nudge_y = -3)
   }
   p
 }

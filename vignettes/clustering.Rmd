@@ -31,8 +31,8 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-load(system.file("extdata/M_P1.RData",package = "mitoClone2"))
-load(system.file("extdata/N_P1.RData",package = "mitoClone2"))
+M_P1 <- readRDS(system.file("extdata/M_P1.RDS",package = "mitoClone2"))
+N_P1 <- readRDS(system.file("extdata/N_P1.RDS",package = "mitoClone2"))
 P1 <- mutationCallsFromMatrix(as.matrix(M_P1), as.matrix(N_P1))
 ```
 

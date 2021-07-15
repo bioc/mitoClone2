@@ -23,9 +23,9 @@ the user which to drop these from a result this function may be
 used. ONLY WORKS FOR MITOCHONDRIAL MUTATIONS.
 }
 \examples{
-load(system.file("extdata/M_P1.RData",package =
+M_P1 <- readRS(system.file("extdata/M_P1.RDS",package =
 "mitoClone2"))
-load(system.file("extdata/N_P1.RData",package =
+N_P1 <- readRDS(system.file("extdata/N_P1.RDS",package =
 "mitoClone2"))
 P1 <- mutationCallsFromMatrix(as.matrix(M_P1),
 as.matrix(N_P1))
