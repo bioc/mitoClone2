@@ -18,14 +18,14 @@
 #' @name data
 NULL
 
-#'@name data
+#'@rdname data
 "M_P1"
 
-#'@name data
+#'@rdname data
 "N_P1"
 
-#'@name data
+#'@rdname data
 "M_P2"
 
-#'@name data
+#'@rdname data
 "N_P2"

@@ -403,16 +403,10 @@ varCluster <- function(mutcalls,
 #'(in bp) to be removed
 #'@return Returns the same list of mutations excluding those, if any,
 #'that fall within the same window =
-#'@examples M_P1 <- readRDS(system.file("extdata/M_P1.RDS",package =
-#'"mitoClone2"))
-#'N_P1 <- readRDS(system.file("extdata/N_P1.RDS",package =
-#'"mitoClone2"))
-#'P1 <- mutationCallsFromMatrix(as.matrix(M_P1),
-#'as.matrix(N_P1))
-#'P1.muts <- names(getVarsCandidate(P1))
-#'P1.muts <- P1.muts[grep('DEL',P1.muts,invert=TRUE)]
-#'P1.muts <- P1.muts[grep('^X[0-9]+',P1.muts)]
-#'names(P1.muts) <- gsub("^X","",gsub("(\\d+)([AGCT])([AGCT])","\\1 \\2>\\3",P1.muts))
+#'@examples P1.muts <- rep(TRUE,3)
+#'names(P1.muts) <- c("X2537GA","X3351TC","X3350TC")
+#'names(P1.muts) <- gsub("^X","",
+#'gsub("(\\d+)([AGCT])([AGCT])","\\1 \\2>\\3",names(P1.muts)))
 #'P1.muts <- P1.muts[removeWindow(names(P1.muts))]
 #'@export
 removeWindow <- function(x, window = 1) {
