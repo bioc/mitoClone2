@@ -23,7 +23,7 @@ the user which to drop these from a result this function may be
 used. ONLY WORKS FOR MITOCHONDRIAL MUTATIONS.
 }
 \examples{
-M_P1 <- readRS(system.file("extdata/M_P1.RDS",package =
+M_P1 <- readRDS(system.file("extdata/M_P1.RDS",package =
 "mitoClone2"))
 N_P1 <- readRDS(system.file("extdata/N_P1.RDS",package =
 "mitoClone2"))

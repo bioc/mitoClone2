@@ -403,7 +403,7 @@ varCluster <- function(mutcalls,
 #'(in bp) to be removed
 #'@return Returns the same list of mutations excluding those, if any,
 #'that fall within the same window =
-#'@examples M_P1 <- readRS(system.file("extdata/M_P1.RDS",package =
+#'@examples M_P1 <- readRDS(system.file("extdata/M_P1.RDS",package =
 #'"mitoClone2"))
 #'N_P1 <- readRDS(system.file("extdata/N_P1.RDS",package =
 #'"mitoClone2"))
