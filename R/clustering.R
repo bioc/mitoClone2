@@ -655,7 +655,7 @@ mitoPlot <- function(variants,
       ggplot2::facet_wrap(~sample) +
       ggplot2::ylim(0,13)
   if(showLabel){
-      p <- p + ggplot2::geom_text(data=subset(plot.df,plot.df$type == 'mutation'),ggplot2::aes(x = start, y = 12, label = plot.df$gene),color='black',nudge_y = -3)
+      p <- p + ggplot2::geom_text(data=subset(plot.df,plot.df$type == 'mutation'),ggplot2::aes(x = start, y = 12, label = subset(plot.df,plot.df$type == 'mutation')$gene),color='black',nudge_y = -3)
   }
   p
 }
