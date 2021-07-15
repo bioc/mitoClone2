@@ -9,18 +9,26 @@ removeWindow(x, window = 1)
 \arguments{
 \item{x}{A list of strings that comprise sites that will be filtered}
 
-\item{window}{Integer of how close mutations must be to one another (in bp) to be removed}
+\item{window}{Integer of how close mutations must be to one another
+(in bp) to be removed}
 }
 \value{
-Returns the same list of mutations excluding those, if any, that fall within the same window =
+Returns the same list of mutations excluding those, if any,
+that fall within the same window =
 }
 \description{
-Mutations co-occuring at the same genomic position may often be the result of sequencing artifacts or technical biases. In cases where the user which to drop these from a result this function may be used. ONLY WORKS FOR MITOCHONDRIAL MUTATIONS.
+Mutations co-occuring at the same genomic position may often be the
+result of sequencing artifacts or technical biases. In cases where
+the user which to drop these from a result this function may be
+used. ONLY WORKS FOR MITOCHONDRIAL MUTATIONS.
 }
 \examples{
-load(system.file("extdata/M_P1.RData",package = "mitoClone2"))
-load(system.file("extdata/N_P1.RData",package = "mitoClone2"))
-P1 <- mutationCallsFromMatrix(as.matrix(M_P1), as.matrix(N_P1))
+load(system.file("extdata/M_P1.RData",package =
+"mitoClone2"))
+load(system.file("extdata/N_P1.RData",package =
+"mitoClone2"))
+P1 <- mutationCallsFromMatrix(as.matrix(M_P1),
+as.matrix(N_P1))
 P1.muts <- names(getVarsCandidate(P1))
 P1.muts <- P1.muts[grep('DEL',P1.muts,invert=TRUE)]
 P1.muts <- P1.muts[grep('^X[0-9]+',P1.muts)]

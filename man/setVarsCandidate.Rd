@@ -9,7 +9,8 @@ setVarsCandidate(mutcall, varlist)
 \arguments{
 \item{mutcall}{object of class \code{\link{mutationCalls}}.}
 
-\item{varlist}{vector of booleans with the names set to the variants to use for clustering}
+\item{varlist}{vector of booleans with the names set to the variants
+to use for clustering}
 }
 \value{
 Sets the cluster slot on a mutationCalls object
@@ -18,7 +19,8 @@ Sets the cluster slot on a mutationCalls object
 Sets the putative variants that we want to use for clustering
 }
 \examples{
-load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
+load(system.file("extdata/LudwigFig7.Rda",package =
+"mitoClone2"))
 mutations_to_cluster <- getVarsCandidate(LudwigFig7)
 mutations_to_cluster[] <- rep(c(TRUE,FALSE),each=19)
 LudwigFig7 <- setVarsCandidate(LudwigFig7,mutations_to_cluster)

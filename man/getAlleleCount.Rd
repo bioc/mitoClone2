@@ -9,13 +9,15 @@ getAlleleCount(mutcall, type = c("mutant", "nonmutant"))
 \arguments{
 \item{mutcall}{object of class \code{\link{mutationCalls}}.}
 
-\item{type}{character that is either `mutant` or `nonmutant` depending on which allele count the user wants to access}
+\item{type}{character that is either `mutant` or `nonmutant`
+depending on which allele count the user wants to access}
 }
 \value{
 Returns matrix of either mutant or non-mutant allele counts
 }
 \description{
-Extracts the counts of allele for either the mutant or all the non-mutant alleles
+Extracts the counts of allele for either the mutant or all the
+non-mutant alleles
 }
 \examples{
 load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))

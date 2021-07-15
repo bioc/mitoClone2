@@ -1,19 +1,46 @@
 #'Inference of mutational trees by of single cell mutational status
 #'
-#'From data on the observed mutational status of single cells at a number of genomic sites, computes a likely phylogenetic tree using PhISCS (https://github.com/sfu-compbio/PhISCS) and associates single cells with leaves of the tree.
-#'The function \code{\link{clusterMetaclones}} should be called on the output in order to group mutations into clones using a likelihood-based approach.
+#'From data on the observed mutational status of single cells at a
+#' number of genomic sites, computes a likely phylogenetic tree using
+#' PhISCS (https://github.com/sfu-compbio/PhISCS) and associates
+#' single cells with leaves of the tree.  The function
+#' \code{\link{clusterMetaclones}} should be called on the output in
+#' order to group mutations into clones using a likelihood-based
+#' approach.
 #'@param mutcalls object of class \code{\link{mutationCalls}}.
-#'@param fn false negative rate, i.e. the probability of only observing the reference allele if there is a mutation. #add gene-wise
-#'@param fp false positive, i.e. the probability of observing the mutant allele if there is no mutation.
+#'@param fn false negative rate, i.e. the probability of only
+#'observing the reference allele if there is a mutation. #add
+#'gene-wise
+#'@param fp false positive, i.e. the probability of observing the
+#'mutant allele if there is no mutation.
 #'@param cores number of cores to use for PhISCS (defaults to 1)
-#'@param time maximum time to be used for PhISCS optimization, in seconds (defaults to 10000)
+#'@param time maximum time to be used for PhISCS optimization, in
+#'seconds (defaults to 10000)
 #'@param tempfolder temporary folder to use for PhISCS output
-#'@param python_env Any shell commands to execute in order to make the gurobi python package available. The easiest solution is running R from an environment where the gurobi python package is avaiable. In some settings (e.g. RStudio Server), this parameter can be used instead. \code{muta_clone} executes PhISCS using a \code{system} call to python. The value of this parameter is prepended to the call. If you have a conda environment \code{myenv} that contains gurobipy, \code{source activate myenv} can work. Occassionally RStudio Server modifies your PATH so that that the conda and source commands are not available. In that case you can for example use \code{export PATH=/path/to/conda/:$PATH; source activate myenv}. easybuild users can \code{module load anaconda/v3; source activate myenv}
-#'@param force_recalc Rerun PhISCS even if the \code{tempfolder} contains valid PhISCS output
-#'@param method A string variable of either PhISCS or SCITE depending on the tree-inferring software the user wants to use. Default: PhISCS
-#'@examples load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
-#' LudwigFig7 <- varCluster(LudwigFig7, python_env = "",method='SCITE')
-#'@return an object of class \code{\link{mutationCalls}}, with an inferred tree structure and cell to clone assignment added.
+#'@param python_env Any shell commands to execute in order to make the
+#'gurobi python package available. The easiest solution is
+#'running R from an environment where the gurobi python package
+#'is avaiable. In some settings (e.g. RStudio Server), this
+#'parameter can be used instead. \code{muta_clone} executes
+#'PhISCS using a \code{system} call to python. The value of this
+#'parameter is prepended to the call. If you have a conda
+#'environment \code{myenv} that contains gurobipy, \code{source
+#'activate myenv} can work. Occassionally RStudio Server modifies
+#'your PATH so that that the conda and source commands are not
+#'available. In that case you can for example use \code{export
+#'PATH=/path/to/conda/:$PATH; source activate myenv}. easybuild
+#'users can \code{module load anaconda/v3; source activate myenv}
+#'@param force_recalc Rerun PhISCS even if the \code{tempfolder}
+#'contains valid PhISCS output
+#'@param method A string variable of either PhISCS or SCITE depending
+#'on the tree-inferring software the user wants to use. Default:
+#'PhISCS
+#'@examples load(system.file("extdata/LudwigFig7.Rda",package =
+#'"mitoClone2"))
+#'LudwigFig7 <- varCluster(LudwigFig7,
+#'python_env = "",method='SCITE')
+#'@return an object of class \code{\link{mutationCalls}}, with an
+#'inferred tree structure and cell to clone assignment added.
 #'@export
 
 varCluster <- function(mutcalls,
@@ -50,11 +77,12 @@ varCluster <- function(mutcalls,
             row.names = gsub("[><_]", "", rownames(usedata)),
             col.names = gsub("[><_]", "", colnames(usedata))
         )
-        ## if(!system("which PhISCS", intern = FALSE, ignore.stderr = TRUE, ignore.stdout = TRUE) == "0"){
+        ## if(!system("which PhISCS", intern = FALSE,
+        ##ignore.stderr = TRUE, ignore.stdout = TRUE) == "0"){
         ##     stop("PhISCS not detected on your system!")
         ## }else{
-        ##     ##base <- system.file("extdata/python/PhISCS-I",package = "mitoClone")
-        ##     base <- system("which samtools",intern=TRUE)
+        ##     ##base <-
+        ##system.file("extdata/python/PhISCS-I",package = "mitoClone")
         ## }
         base <- 'PhISCS-I'
         command <-
@@ -74,7 +102,11 @@ varCluster <- function(mutcalls,
             ##message("Now running the following command:", command)
             message("Please run the following command with PhISCS-I:",
                     command)
-            ##tryCatch(system(command), error = function(e) stop("PhISCS error: ",e,"Make sure that the gurobi python package is available and consider specifying python_env."))
+            ##tryCatch(system(command), error = function(e){
+            ## stop("PhISCS error: ",e,
+            ## "Make sure that the gurobi python package is available
+            ## and consider specifying python_env."))
+            ##}
         } else {
             message("Results found for PhISCS run")
         }
@@ -103,11 +135,62 @@ varCluster <- function(mutcalls,
         clones <- as.matrix(clones)
         clone.names -> rownames(clones)
     }
+    ## if (method == 'SACS'){
+    ##     base <- 'sacs'
+    ##       command <-
+    ##         sprintf(
+    ##             "%s %s -i %s -e %s -E %s -m %d -n %d -r 2 -a %.2f -b %.2f -k 0 > %s",
+    ##             ifelse(python_env == "", "", paste0(python_env, "; ")),
+    ##             base,
+    ##             file.path(tempfolder, "input_scite.txt"),
+    ##             file.path(tempfolder, "mut_sacs_names.txt"),
+    ##             file.path(tempfolder, "cell_sacs_names.txt"),
+    ##             NCOL(usedata),
+    ##             NROW(usedata),
+    ##             fn,
+    ##             fp,
+    ##             file.path(tempfolder, "sacs_out")
+    ##         )
+    ##     mut.raw <- usedata
+    ##     mut.raw[mut.raw == '?'] <- '2'
+    ##     cell.names <- row.names(mut.raw)
+    ##     mutation.names <- colnames(mut.raw)
+    ##     mut.raw <- apply(mut.raw, 2, as.numeric)
+    ##     write.table(
+    ##         x = mut.raw,
+    ##         file.path(tempfolder, "input_sacs.txt"),
+    ##         sep = ' ',
+    ##         row.names = FALSE,
+    ##         col.names = FALSE,
+    ##         quote = FALSE
+    ##     )##,sep=' ')
+    ##     write.table(
+    ##         mutation.names,
+    ##         file.path(tempfolder, "mut_sacs_names.txt"),
+    ##         row.names = FALSE,
+    ##         col.names = FALSE,
+    ##         quote = FALSE
+    ##     )
+    ##     write.table(
+    ##         cell.names,
+    ##         file.path(tempfolder, "cell_sacs_names.txt"),
+    ##         row.names = FALSE,
+    ##         col.names = FALSE,
+    ##         quote = FALSE
+    ##     )
+    ##     if (!file.exists(file.path(tempfolder, "sacs_out")))
+    ##         {
+    ##             message("Please run the following command with SACS:",
+    ##                     command)
+    ##         } else {
+    ##             message("Results found for SACS run")
+    ##     }
+    ## }
     if (method == 'SCITE') {
-        if (file.exists(system.file("libs/scite", package = "mitoClone2"))) {
-            base <- system.file("libs/scite", package = "mitoClone2")
+        if (file.exists(system.file("SCITE/scite", package = "mitoClone2"))) {
+            base <- system.file("SCITE/scite", package = "mitoClone2")
         } else{
-            base <- system.file("libs/scite.exe", package = "mitoClone2")
+            base <- system.file("SCITE/scite.exe", package = "mitoClone2")
         }
         command <-
             sprintf(
@@ -144,7 +227,10 @@ varCluster <- function(mutcalls,
         )
         if (!file.exists(file.path(tempfolder, "scite_out_ml0.gv")) |
             force_recalc) {
-            message("Ignoring multi-core param - SCITE uses a single thread")
+            message("If you use this method for publicaiton, please make sure to cite :")
+            message(paste0("Jahn, K., Kuipers, J. & Beerenwinkel, N. Tree inference for ",
+                           "single-cell data. Genome Biol 17, 86 (2016). ",
+                           "https://doi.org/10.1186/s13059-016-0936-x"))
             message("Now running the following command:", command)
             tryCatch(
                 system(command),
@@ -157,7 +243,9 @@ varCluster <- function(mutcalls,
             )
         } else{
             message(
-                "Results found, skipping SCITE run. Warning! As SCITE will not overwrite previous results, if you are attempting to run this function again you may potentially need to delete your previous run or provide a new tempfolder."
+                paste0("Results found, skipping SCITE run. Warning! As SCITE will not overwrite previous results",
+                       " if you are attempting to run this function again you may potentially need to delete",
+                       " your previous run or provide a new tempfolder.")
             )
         }
         scite.in <-
@@ -287,26 +375,6 @@ varCluster <- function(mutcalls,
         )))
         
     }
-    ## if(method == 'PhISCS'){
-    ##   ref <- evaluate_likelihood(usedata[,colnames(physics)], physics)
-    ##   mutcalls@treeLikelihoods <- sapply(colnames(physics), function(node1) {
-    ##     sapply(c(colnames(physics),"root"), function(node2) {
-    ##       newmodel <- physics
-    ##       if (node2 == "root") newmodel[,node1] <- rep(0, nrow(newmodel)) else newmodel[,node1] <- newmodel[,node2]
-    ##       evaluate_likelihood(usedata[,colnames(physics)], newmodel) - ref
-    ##     })
-    ##   })
-    ## }
-    ## if(method == 'SCITE'){
-    ##   ref <- evaluate_likelihood(usedata[,colnames(scite)], scite)
-    ##   mutcalls@treeLikelihoods <- sapply(colnames(scite), function(node1) {
-    ##     sapply(c(colnames(scite),"root"), function(node2) {
-    ##       newmodel <- scite
-    ##       if (node2 == "root") newmodel[,node1] <- rep(0, nrow(newmodel)) else newmodel[,node1] <- newmodel[,node2]
-    ##       evaluate_likelihood(usedata[,colnames(scite)], newmodel) - ref
-    ##     })
-    ##   })
-    ## }
     ref <-
         evaluate_likelihood(usedata[, colnames(cell.mutations)], cell.mutations)
     mutcalls@treeLikelihoods <-
@@ -326,23 +394,33 @@ varCluster <- function(mutcalls,
 
 #'Remove mutations that occuring at the same site
 #'
-#'Mutations co-occuring at the same genomic position may often be the result of sequencing artifacts or technical biases. In cases where the user which to drop these from a result this function may be used. ONLY WORKS FOR MITOCHONDRIAL MUTATIONS.
+#'Mutations co-occuring at the same genomic position may often be the
+#' result of sequencing artifacts or technical biases. In cases where
+#' the user which to drop these from a result this function may be
+#' used. ONLY WORKS FOR MITOCHONDRIAL MUTATIONS.
 #'@param x A list of strings that comprise sites that will be filtered
-#'@param window Integer of how close mutations must be to one another (in bp) to be removed
-#'@return Returns the same list of mutations excluding those, if any, that fall within the same window =
-#'@examples load(system.file("extdata/M_P1.RData",package = "mitoClone2"))
-#' load(system.file("extdata/N_P1.RData",package = "mitoClone2"))
-#' P1 <- mutationCallsFromMatrix(as.matrix(M_P1), as.matrix(N_P1))
-#' P1.muts <- names(getVarsCandidate(P1))
-#' P1.muts <- P1.muts[grep('DEL',P1.muts,invert=TRUE)]
-#' P1.muts <- P1.muts[grep('^X[0-9]+',P1.muts)]
-#' names(P1.muts) <- gsub("^X","",gsub("(\\d+)([AGCT])([AGCT])","\\1 \\2>\\3",P1.muts))
-#' P1.muts <- P1.muts[removeWindow(names(P1.muts))]
+#'@param window Integer of how close mutations must be to one another
+#'(in bp) to be removed
+#'@return Returns the same list of mutations excluding those, if any,
+#'that fall within the same window =
+#'@examples load(system.file("extdata/M_P1.RData",package =
+#'"mitoClone2"))
+#'load(system.file("extdata/N_P1.RData",package =
+#'"mitoClone2"))
+#'P1 <- mutationCallsFromMatrix(as.matrix(M_P1),
+#'as.matrix(N_P1))
+#'P1.muts <- names(getVarsCandidate(P1))
+#'P1.muts <- P1.muts[grep('DEL',P1.muts,invert=TRUE)]
+#'P1.muts <- P1.muts[grep('^X[0-9]+',P1.muts)]
+#'names(P1.muts) <- gsub("^X","",gsub("(\\d+)([AGCT])([AGCT])","\\1 \\2>\\3",P1.muts))
+#'P1.muts <- P1.muts[removeWindow(names(P1.muts))]
 #'@export
 removeWindow <- function(x, window = 1) {
     if (any(sapply(x, grepl, '^[A-Z]'))) {
-        stop(
-            'Non-standard variant name detected. Please only provide variant coordinates in the following format: 1337 G>A'
+        stop(paste0(
+            'Non-standard variant name detected.',
+            ' Please only provide variant coordinates',
+            ' in the following format: 1337 G>A')
         )
     }
     firstround <- sort(mut2GR(x))
@@ -365,10 +443,16 @@ removeWindow <- function(x, window = 1) {
 
 #'Quick clustering of mutations
 #'
-#'Performs a quick hierarchical clustering on a object of class \code{\link{mutationCalls}}. See \code{\link{varCluster}} for an alternative that infers mutational trees and uses sound models of dropout.
+#'Performs a quick hierarchical clustering on a object of class
+#' \code{\link{mutationCalls}}. See \code{\link{varCluster}} for an
+#' alternative that infers mutational trees and uses sound models of
+#' dropout.
 #'@param mutcalls object of class \code{\link{mutationCalls}}.
-#'@param binarize If \code{FALSE}, will use raw allele frequencies for the clustering. If \code{TRUE}, will use binarized mutation/reference/dropout calls.
-#'@param drop_empty Remove all rows in the provided mutcalls object where no cells exhibit a mutation.
+#'@param binarize If \code{FALSE}, will use raw allele frequencies for
+#'the clustering. If \code{TRUE}, will use binarized
+#'mutation/reference/dropout calls.
+#'@param drop_empty Remove all rows in the provided mutcalls object
+#'where no cells exhibit a mutation.
 #'@param ... Parameters passed to \code{\link[pheatmap]{pheatmap}}
 #'@return The result of running \code{\link[pheatmap]{pheatmap}}
 #'@examples load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
@@ -394,11 +478,25 @@ quick_cluster <- function(mutcalls,
 
 #'Cluster mutations into clones - following the tree structure
 #'
-#'PhISCS orders all mutations into a hierarchical mutational tree; in many cases, the exact order of the acquisition of individual mutations in not unanimously determined from the data. This function computes the change in likelihood of the infered clonal assignment if two mutations are merged into a clone. Hierarchical clustering is then used to determine the clonal structure. The result is visualized and should be fine-tuned using the \code{min.lik} parameter.
-#'@param mutcalls mutcalls object of class \code{\link{mutationCalls}} for which \code{\link{varCluster}} has been run
-#'@param min.lik specifies the minimum difference in likelihood required. This parameter is set arbitrarily, see the vignette "Computation of clonal hierarchies and clustering of mutations" for more information.
+#'PhISCS orders all mutations into a hierarchical mutational tree; in
+#' many cases, the exact order of the acquisition of individual
+#' mutations in not unanimously determined from the data. This
+#' function computes the change in likelihood of the infered clonal
+#' assignment if two mutations are merged into a clone. Hierarchical
+#' clustering is then used to determine the clonal structure. The
+#' result is visualized and should be fine-tuned using the
+#' \code{min.lik} parameter.
+#'@param mutcalls mutcalls object of class \code{\link{mutationCalls}}
+#'for which \code{\link{varCluster}} has been run
+#'@param min.lik specifies the minimum difference in likelihood
+#'required. This parameter is set arbitrarily, see the vignette
+#'"Computation of clonal hierarchies and clustering of mutations"
+#'for more information.
 #'@param plot whether dendrograms should be plotted.
-#'@return Returns the provided \code{\link{mutationCalls}} class object with an additional 'mainClone' metadata which allows for further refinement of clonal population and association of cells with a cluster of mutations (in this case clones).
+#'@return Returns the provided \code{\link{mutationCalls}} class
+#'object with an additional 'mainClone' metadata which allows for
+#'further refinement of clonal population and association of
+#'cells with a cluster of mutations (in this case clones).
 #'@examples P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
 #' P1 <- clusterMetaclones(P1)
 #' ## access via mainClone metadata
@@ -427,8 +525,10 @@ clusterMetaclones <- function(mutcalls,
             ub <- branches[[i]][branches[[i]] != "root"]
             d <- dist(t(mutcalls@treeLikelihoods[ub, ub]))
             ##pheatmap::pheatmap(mutcalls@treeLikelihoods[branches[[i]],branches[[i]]],
-            ##                   clustering_distance_cols = as.dist(1-cor(mutcalls@treeLikelihoods[branches[[i]],branches[[i]]])),
-            ##                   clustering_distance_rows = as.dist(1-cor(t(mutcalls@treeLikelihoods[branches[[i]],branches[[i]]]))))
+            ##clustering_distance_cols =
+            ## as.dist(1-cor(mutcalls@treeLikelihoods[branches[[i]],branches[[i]]])),
+            ##clustering_distance_rows =
+            ##as.dist(1-cor(t(mutcalls@treeLikelihoods[branches[[i]],branches[[i]]]))))
             cl <- hclust(d)
             tryCatch(
                 plot(cl),
@@ -454,11 +554,21 @@ clusterMetaclones <- function(mutcalls,
 
 #'Plot clone-specific variants in circular plots
 #'
-#'@param variants Character vector of variants to plot in format 5643G>T or 5643 G>T.
-#'@param patient Characet vector identifying which variant belongs to what clone. The order should match that of the 'vars' parameter and shoul dbe of identical length. If none is provided, the function assumes all variants are from one single sample which will be named "Main Clone". Default: NULL.
-#'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
-#'@param showLegend Boolean for whether or not the gene legend should be present in the final output plot. Default: TRUE.
-#'@param showLabel Boolean for whether or not the name of the variant should be shown as a label in the final output plot. Default: TRUE.
+#'@param variants Character vector of variants to plot in format
+#'5643G>T or 5643 G>T.
+#'@param patient Characet vector identifying which variant belongs to
+#'what clone. The order should match that of the 'vars' parameter
+#'and shoul dbe of identical length. If none is provided, the
+#'function assumes all variants are from one single sample which
+#'will be named "Main Clone". Default: NULL.
+#'@param genome The mitochondrial genome of the sample being
+#'investigated. Please note that this is the UCSC standard
+#'chromosome sequence. Default: hg38.
+#'@param showLegend Boolean for whether or not the gene legend should
+#'be present in the final output plot. Default: TRUE.
+#'@param showLabel Boolean for whether or not the name of the variant
+#'should be shown as a label in the final output plot. Default:
+#'TRUE.
 #'@return A ggplot object illustrating the clone specific mutations.
 #'@examples known.variants <- c("9001 T>C","12345 G>A","1337 G>A")
 #'mitoPlot(known.variants)
@@ -553,10 +663,19 @@ mitoPlot <- function(variants,
 
 #'Manually overwrite clustering of mutations into clones
 #'
-#'The function \code{\link{clusterMetaclones}} provides an automated way to group mutations into clones for subsequent analyses (such as differential expression analyses). In practice, it may make sense to overwrite these results manually. See the vignette 'Computation of clonal hierarchies and clustering of mutations' for an example.
-#'@param mutcalls mutcalls object of class \code{\link{mutationCalls}} for which \code{\link{clusterMetaclones}} has been run
-#'@param mutation2clones Named integer vector that assigns mutations to clones. See the vignette 'Computation of clonal hierarchies and clustering of mutations' for an example.
-#'@return Returns the provided \code{\link{mutationCalls}} class object with the 'mainClone' metadata overwritten with the manual values provided by the user.
+#'The function \code{\link{clusterMetaclones}} provides an automated
+#' way to group mutations into clones for subsequent analyses (such as
+#' differential expression analyses). In practice, it may make sense
+#' to overwrite these results manually. See the vignette 'Computation
+#' of clonal hierarchies and clustering of mutations' for an example.
+#'@param mutcalls mutcalls object of class \code{\link{mutationCalls}}
+#'for which \code{\link{clusterMetaclones}} has been run
+#'@param mutation2clones Named integer vector that assigns mutations
+#'to clones. See the vignette 'Computation of clonal hierarchies
+#'and clustering of mutations' for an example.
+#'@return Returns the provided \code{\link{mutationCalls}} class
+#'object with the 'mainClone' metadata overwritten with the
+#'manual values provided by the user.
 #'@examples P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
 #' new.n <- seq(17)
 #' names(new.n) <- names(getMut2Clone(P1))

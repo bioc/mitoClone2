@@ -1,21 +1,56 @@
-#'Create a mutationCalls objects from nucleotide base calls and defines a exclusionlist (cohort)
+#'Create a mutationCalls objects from nucleotide base calls and
+#' defines a exclusionlist (cohort)
 #'
-#'Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies measured in single cells from several individuals. Applies two sets of filters: In the first step, filters on coverage to include potentially noisy variants; in the second step, compares allele frequencies between patients to remove variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). The exclusionlist derived from the original Velten et al. 2021 dataset is available internal and can be used on single individuals using \code{\link{mutationCallsFromExclusionlist}}
-#'@param BaseCounts A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}} or \code{\link{bam2R_10x}}.
-#'@param patient A character vector associating each cell / entry in the \code{BaseCount} list with a patient
-#'@param sites Vector specifying genomic regions, defaults to the entire mitochondrial genome. Excepts a string but may be included as a GRanges object.
-#'@param MINREADS Minimum number of reads on a site in a single cell to qualify the site as covered
-#'@param MINCELL Minimum number of cells across the whole data set to cover a site
-#'@param MINFRAC Fraction of reads on the mutant allele to provisionally classify a cell as mutant
-#'@param MINCELLS.PATIENT Minimum number of mutant cells per patient to classify the mutation as relevant in that patient, AND
-#'@param MINFRAC.PATIENT Minimum fraction of mutant cells per patient to classify the mutation as relevant in that patient
-#'@param MINFRAC.OTHER Minimum fraction of mutant cells identified in a second patient for the mutation to be excluded. Fraction relative to the fraction of of cells from the patient where a variant is enriched.
-#'@param USE.REFERENCE Boolean. The variant calls will be of the format REF>ALT where REF is decided based on the selected \code{genome} annotation. If set to FALSE, the reference allele will be the most abundant.
-#'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
-#'@return A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and an entry named \code{exclusionlist} containing a exclusionlist of sites with variants in several individuals
+#'Identifies relevant mitochondrial somatic variants from raw counts
+#' of nucleotide frequencies measured in single cells from several
+#' individuals. Applies two sets of filters: In the first step,
+#' filters on coverage to include potentially noisy variants; in the
+#' second step, compares allele frequencies between patients to remove
+#' variants that were observed in several individuals and that
+#' therefore are unlikely to represent true somatic variants (e.g. RNA
+#' editing events). The exclusionlist derived from the original Velten
+#' et al. 2021 dataset is available internal and can be used on single
+#' individuals using \code{\link{mutationCallsFromExclusionlist}}
+#'@param BaseCounts A list of base call matrices (one matrix per cell)
+#'as produced by \code{\link{baseCountsFromBamList}} or
+#'\code{\link{bam2R_10x}}.
+#'@param patient A character vector associating each cell / entry in
+#'the \code{BaseCount} list with a patient
+#'@param sites Vector specifying genomic regions, defaults to the
+#'entire mitochondrial genome. Excepts a string but may be
+#'included as a GRanges object.
+#'@param MINREADS Minimum number of reads on a site in a single cell
+#'to qualify the site as covered
+#'@param MINCELL Minimum number of cells across the whole data set to
+#'cover a site
+#'@param MINFRAC Fraction of reads on the mutant allele to
+#'provisionally classify a cell as mutant
+#'@param MINCELLS.PATIENT Minimum number of mutant cells per patient
+#'to classify the mutation as relevant in that patient, AND
+#'@param MINFRAC.PATIENT Minimum fraction of mutant cells per patient
+#'to classify the mutation as relevant in that patient
+#'@param MINFRAC.OTHER Minimum fraction of mutant cells identified in
+#'a second patient for the mutation to be excluded. Fraction
+#'relative to the fraction of of cells from the patient where a
+#'variant is enriched.
+#'@param USE.REFERENCE Boolean. The variant calls will be of the
+#'format REF>ALT where REF is decided based on the selected
+#'\code{genome} annotation. If set to FALSE, the reference allele
+#'will be the most abundant.
+#'@param genome The mitochondrial genome of the sample being
+#'investigated. Please note that this is the UCSC standard
+#'chromosome sequence. Default: hg38.
+#'@return A list of \code{\link{mutationCalls}} objects (one for each
+#'\code{patient}) and an entry named \code{exclusionlist}
+#'containing a exclusionlist of sites with variants in several
+#'individuals
 #'@examples sites.gr <- GenomicRanges::GRanges("chrM:1-15000")
-#'BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites=sites.gr)
-#'mutCalls <- mutationCallsFromCohort(BaseCounts,patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),MINCELL=1,MINFRAC=0,MINCELLS.PATIENT=1,genome='mm10',sites=sites.gr)
+#'BaseCounts <- bam2R_10x(file = system.file("extdata",
+#'"mm10_10x.bam", package="mitoClone2"), sites=sites.gr)
+#'mutCalls <- mutationCallsFromCohort(BaseCounts,
+#'patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),
+#'MINCELL=1, MINFRAC=0, MINCELLS.PATIENT=1, genome='mm10',
+#'sites=sites.gr)
 #'@export
 mutationCallsFromCohort <- function(BaseCounts,
                                     sites,
@@ -32,7 +67,7 @@ mutationCallsFromCohort <- function(BaseCounts,
     if (!length(sites) == 1) {
         stop('Your sites parameter must be a character vector or GRanges object of length 1')
     }
-    GenomicRanges::GRanges(sites)
+    sites <- GenomicRanges::GRanges(sites)
     ## read in the
     ntcountsArray <- simplify2array(BaseCounts)
     ntcountsArray <- aperm(ntcountsArray, c(1, 3, 2))
@@ -44,11 +79,12 @@ mutationCallsFromCohort <- function(BaseCounts,
                    "hg19" = hg19.dna,
                    "mm10" = mm10.dna)
         reference <-
-            reference[GenomicRanges::start(GRanges(sites)):GenomicRanges::end(GRanges(sites))]
+            reference[GenomicRanges::start(sites):GenomicRanges::end(sites)]
         message(paste0(
             'Looks good. Using the UCSC ',
             genome,
-            ' genome as a reference for variants.'
+            ' genome as a reference for variants.',
+            ' Be wary, only mitochondrial annotations are available!'
         ))
     } else{
         message(paste0(
@@ -152,24 +188,65 @@ mutationCallsFromCohort <- function(BaseCounts,
     return(out)
 }
 
-#'Create a mutationCalls object from nucleotide base calls using a exclusionlist (single individual)
+#'Create a mutationCalls object from nucleotide base calls using a
+#' exclusionlist (single individual)
 #'
-#'Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies. Applies two sets of filters: In the first step, filters on coverage and minimum allele frequency to exclude potentially noisy variants; in the second step, filters against a exclusionlist of variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). These exclusionlists are created using \code{\link{mutationCallsFromCohort}}
-#'@param BaseCounts A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}
-#'@param lim.cov Minimal coverage required per cell for a cell to be classified as covered
-#'@param min.af Minimal allele frequency for a cell to be classified as mutant
-#'@param min.num.samples Minimal number of cells required to be classified as covered and mutant according to the thresholds set in \code{lim.cov} and \code{min.af}. Usually specified as a fraction of the total number of cells.
-#'@param universal.var.cells Maximum number of cells required to be classified as mutant according to the threshold set in \code{min.af.universal}.  Usually specified as a fraction of the total number of cells; serves to avoid e.g. germline variants.
-#'@param min.af.universal Minimal allele frequency for a cell to be classified as mutant, in the context of removing universal variants. Defaults to \code{min.af}, but can be set to lower values.
-#'@param exclusionlists.use List of sites to exclude for variants calling. The default exclusionlists object included with this package contains exclude or hardmask in GRanges format. The four exclusionlists included in this case are: "three" (hg38 sites that are part of homopolymer(e.g. AAA) of at least 3 bp in length), "mutaseq" (sites discovered to be overrepresented in AML SmartSeq2 data analysis from Velten et al 2021), "masked" (sites that are softmasked in either the UCSC or Refseq genome annotations), and "rnaEDIT" which are sites that are subjected to RNA-editing according to the REDIportal. These lists can also be input manually by a researcher and provided as either coordinates (as a string) or as a GRanges objects.
-#'@param max.var.na Final filtering step: Remove all mutations with no coverage in more than this fraction of cells
-#'@param max.cell.na Final filtering step: Remove all cells with no coverage in more than this fraction of mutations
-#'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
-#'@param ncores number of cores to use for tabulating potential variants (defaults to 2)
-#'@param ... Parameters passed to \code{\link{mutationCallsFromMatrix}}
+#'Identifies relevant mitochondrial somatic variants from raw counts
+#' of nucleotide frequencies. Applies two sets of filters: In the
+#' first step, filters on coverage and minimum allele frequency to
+#' exclude potentially noisy variants; in the second step, filters
+#' against a exclusionlist of variants that were observed in several
+#' individuals and that therefore are unlikely to represent true
+#' somatic variants (e.g. RNA editing events). These exclusionlists
+#' are created using \code{\link{mutationCallsFromCohort}}
+#'@param BaseCounts A list of base call matrices (one matrix per cell)
+#'as produced by \code{\link{baseCountsFromBamList}}
+#'@param lim.cov Minimal coverage required per cell for a cell to be
+#'classified as covered
+#'@param min.af Minimal allele frequency for a cell to be classified
+#'as mutant
+#'@param min.num.samples Minimal number of cells required to be
+#'classified as covered and mutant according to the thresholds
+#'set in \code{lim.cov} and \code{min.af}. Usually specified as a
+#'fraction of the total number of cells.
+#'@param universal.var.cells Maximum number of cells required to be
+#'classified as mutant according to the threshold set in
+#'\code{min.af.universal}.  Usually specified as a fraction of
+#'the total number of cells; serves to avoid e.g. germline
+#'variants.
+#'@param min.af.universal Minimal allele frequency for a cell to be
+#'classified as mutant, in the context of removing universal
+#'variants. Defaults to \code{min.af}, but can be set to lower
+#'values.
+#'@param exclusionlists.use List of sites to exclude for variants
+#'calling. The default exclusionlists object included with this
+#'package contains exclude or hardmask in GRanges format. The
+#'four exclusionlists included in this case are: "three" (hg38
+#'sites that are part of homopolymer(e.g. AAA) of at least 3 bp
+#'in length), "mutaseq" (sites discovered to be overrepresented
+#'in AML SmartSeq2 data analysis from Velten et al 2021),
+#'"masked" (sites that are softmasked in either the UCSC or
+#'Refseq genome annotations), and "rnaEDIT" which are sites that
+#'are subjected to RNA-editing according to the REDIportal. These
+#'lists can also be input manually by a researcher and provided
+#'as either coordinates (as a string) or as a GRanges objects.
+#'@param max.var.na Final filtering step: Remove all mutations with no
+#'coverage in more than this fraction of cells
+#'@param max.cell.na Final filtering step: Remove all cells with no
+#'coverage in more than this fraction of mutations
+#'@param genome The mitochondrial genome of the sample being
+#'investigated. Please note that this is the UCSC standard
+#'chromosome sequence. Default: hg38.
+#'@param ncores number of cores to use for tabulating potential
+#'variants (defaults to 2)
+#'@param ... Parameters passed to
+#'\code{\link{mutationCallsFromMatrix}}
 #'@return An object of class \code{\link{mutationCalls}}
 #'@examples load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
-#'Example <- mutationCallsFromExclusionlist(example.counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(example.counts), binarize = 0.1)
+#'Example <- mutationCallsFromExclusionlist(example.counts,
+#' min.af=0.05, min.num.samples=5,
+#' universal.var.cells = 0.5 * length(example.counts),
+#' binarize = 0.1)
 #'@export
 mutationCallsFromExclusionlist <- function(BaseCounts,
                                            lim.cov = 20,
@@ -210,7 +287,8 @@ mutationCallsFromExclusionlist <- function(BaseCounts,
         return(x)
     }, mc.cores = ncores) #remove parallelism here
     varaf <- do.call(cbind, varaf)
-    ## you could allow for only sites with coverage! currently you filter at a rate of 10% cells dropping out max
+    ## you could allow for only sites with coverage!
+    ## currently you filter at a rate of 10% cells dropping out max
     ##varaf <- varaf[rowSums(is.na(varaf))/length(BaseCounts) < max.fraction.na,]
     varaf <-
         varaf[rowSums(varaf > min.af, na.rm = TRUE) >= min.num.samples, ]
@@ -250,10 +328,12 @@ mutationCallsFromExclusionlist <- function(BaseCounts,
 
 #'Convert mutation string to GRanges
 #'
-#'@param mut The mutation to convert to a GRanges in the format of "position reference>alternate".
-#'@return Returns a GRanges object containg the site of the variant along with reference/alternate allele data in the metacolumns
-#'@examples mutation_as_granges <- mut2GR('1434 G>A')
-#'@examples mutation_as_granges_no_space <- mut2GR('1434G>A')
+#'@param mut The mutation to convert to a GRanges in the format of
+#'"position reference>alternate".
+#'@return Returns a GRanges object containg the site of the variant
+#'along with reference/alternate allele data in the metacolumns
+#'@examples mutation.as.granges <- mut2GR('1434 G>A')
+#'@examples mutation.as.granges.no.space <- mut2GR('1434G>A')
 #'@export
 mut2GR <- function(mut) {
     gr <-
@@ -273,13 +353,16 @@ mut2GR <- function(mut) {
 
 #'Pull variant counts
 #'
-#'@param BaseCounts A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}
+#'@param BaseCounts A list of base call matrices (one matrix per cell)
+#'as produced by \code{\link{baseCountsFromBamList}}
 #'@param vars Character vector of variants to pull, in format 5643G>T
-#'@param cells Character vector for cells to select, or NULL if all cells from the input are to be used
-#'@return A list with two entries, M (count table on the variant allele) and N (count table on the reference allele)
-#'@examples LudwigFig7.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS"))
-#'known.variants <- c("9000 T>C","1234 G>A","1337 G>A")
-#'counts.known.vars <- pullcountsVars(LudwigFig7.Counts, vars=known.variants)
+#'@param cells Character vector for cells to select, or NULL if all
+#'cells from the input are to be used
+#'@return A list with two entries, M (count table on the variant
+#'allele) and N (count table on the reference allele)
+#'@examples load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
+#'known.variants <- c("9 T>C","12 G>A","13 G>A")
+#'counts.known.vars <- pullcountsVars(example.counts, vars=known.variants)
 #'@export
 pullcountsVars <- function(BaseCounts, vars, cells = NULL) {
     var.gr <- mut2GR(vars)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/classes.R
 \name{getVarsCandidate}
 \alias{getVarsCandidate}
-\title{mutationCalls cluster accessors}
+\title{mutationCalls cluster accessor}
 \usage{
 getVarsCandidate(mutcall)
 }
@@ -10,12 +10,15 @@ getVarsCandidate(mutcall)
 \item{mutcall}{object of class \code{\link{mutationCalls}}.}
 }
 \value{
-Returns a character vector including all the variants to be used for clustering
+Returns a character vector including all the variants to be
+used for clustering
 }
 \description{
-Extracts all the putative variants that we want to use for clustering
+Extracts all the putative variants that we want to use for
+clustering
 }
 \examples{
-load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
+load(system.file("extdata/LudwigFig7.Rda",package =
+"mitoClone2"))
 mutations_to_cluster <- getVarsCandidate(LudwigFig7)
 }

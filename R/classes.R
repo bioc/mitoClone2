@@ -53,17 +53,27 @@ mutationCalls <- setClass(
 #'mutationCalls constructor
 #'
 #'To be used when allele-specific count matrices are available.
-#'@param M A matrix of read counts mapping to the \emph{mutant} allele. Columns are genomic sites and rows and single cells.
-#'@param N A matrix of read counts mapping to the \emph{referece} allele. Columns are genomic sites and rows and single cells.
-#'@param cluster If \code{NULL}, only mutations with coverage in 20 percent of the cells or more will be used for the clustering, and all other mutations will be used for cluster annotation only. Alternatively, a boolean vector of length \code{ncol(M)} that specifies the desired behavior for each genomic site.
-#'@param metadata A data.frame of metadata that will be transfered to the final output where the \code{row.names(metadata)} correspond to the the \code{row.names(M)}.
-#'@param binarize Allele frequency threshold to define a site as mutant (required for some clustering methods)
+#'@param M A matrix of read counts mapping to the \emph{mutant}
+#'allele. Columns are genomic sites and rows and single cells.
+#'@param N A matrix of read counts mapping to the \emph{referece}
+#'allele. Columns are genomic sites and rows and single cells.
+#'@param cluster If \code{NULL}, only mutations with coverage in 20
+#'percent of the cells or more will be used for the clustering,
+#'and all other mutations will be used for cluster annotation
+#'only. Alternatively, a boolean vector of length \code{ncol(M)}
+#'that specifies the desired behavior for each genomic site.
+#'@param metadata A data.frame of metadata that will be transfered to
+#'the final output where the \code{row.names(metadata)}
+#'correspond to the the \code{row.names(M)}.
+#'@param binarize Allele frequency threshold to define a site as
+#'mutant (required for some clustering methods)
 #'@return An object of class \code{\link{mutationCalls}}.
 #'@examples load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
 #' ## we have loaded the example.counts object
 #' known.variants <- c("8 T>C","4 G>A","11 G>A","7 A>G","5 G>A","15 G>A","14 G>A")
 #' known.subset <- pullcountsVars(example.counts, known.variants)
-#' known.subset <- mutationCallsFromMatrix(t(known.subset$M), t(known.subset$N), cluster = rep(TRUE, length(known.variants)))
+#' known.subset <- mutationCallsFromMatrix(t(known.subset$M), t(known.subset$N),
+#' cluster = rep(TRUE, length(known.variants)))
 #'@export
 mutationCallsFromMatrix <- function(M,
                                     N,
@@ -81,7 +91,12 @@ mutationCallsFromMatrix <- function(M,
     ## if (!is.null(cluster)){
     ##     ##out@cluster <- cluster
     ## }else {
-    ##   out@cluster <- apply(out@ternary!="?", 2, mean) > 0.2 #& apply(out@ternary=="1", 2, mean) > 0.04 #the last filter was not used when I made the figure, there was a filter on the allele freq. in RNA. Should maybe include this in the other routines? But this works as well
+    ##   out@cluster <-
+    ## apply(out@ternary!="?", 2, mean) > 0.2
+    ## & apply(out@ternary=="1", 2, mean) > 0.04
+    ## the last filter was not used when I made the figure
+    ## there was a filter on the allele freq. in RNA.
+    ## Should maybe include this in the other routines? 
     ## }
     ternary <- binfun(M, N)
     if (is.null(cluster)) {
@@ -101,14 +116,22 @@ mutationCallsFromMatrix <- function(M,
 
 #'Plot clonal assignment of single cells
 #'
-#'Creates a heatmap of single cell mutation calls, clustered using PhISCS.
+#'Creates a heatmap of single cell mutation calls, clustered using
+#' PhISCS.
 #'@param mutcalls object of class \code{\link{mutationCalls}}.
-#'@param what One of the following: \emph{alleleFreq}: The fraction of reads mapping to the mutant allele or \emph{ternary}: Ternarized mutation status
-#'@param show boolean vector specifying for each mutation if it should be plotted on top of the heatmap as metadata; defaults to mutations not used for the clustering \code{!mutcalls@cluster}
+#'@param what One of the following: \emph{alleleFreq}: The fraction of
+#'reads mapping to the mutant allele or \emph{ternary}:
+#'Ternarized mutation status
+#'@param show boolean vector specifying for each mutation if it should
+#'be plotted on top of the heatmap as metadata; defaults to
+#'mutations not used for the clustering \code{!mutcalls@cluster}
 #'@param ... any arguments passed to \code{\link[pheatmap]{pheatmap}}
-#'@examples  P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
-#' plotClones(P1)
-#'@return Returns TRUE only used for generating a PostScript tree image of the putative mutation tree
+#'@examples P1 <-
+#'readRDS(system.file("extdata/sample_example1.RDS",package =
+#'"mitoClone2"))
+#'plotClones(P1)
+#'@return Returns TRUE only used for generating a PostScript tree
+#'image of the putative mutation tree
 #'@export
 plotClones <- function(mutcalls,
                        what = c("alleleFreq", "ternary"),
@@ -162,18 +185,25 @@ plotClones <- function(mutcalls,
 
 #'mutationCalls accessors
 #'
-#'Retrieves the full matrix of likelihoods associating single cells with clones
+#'Retrieves the full matrix of likelihoods associating single cells
+#' with clones
 #'@param mutcall object of class \code{\link{mutationCalls}}.
-#'@param mainClones Retrieve likelihoods associated with the main Clones. Defaults to \code{TRUE} if \code{\link{clusterMetaclones}} has been run.
-#'@return Return \code{TRUE} if \code{\link{clusterMetaclones}} has been run otherwise returns the cell by clone matrix of likelihood associating each cell to a given clone.
-#'@examples load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
+#'@param mainClones Retrieve likelihoods associated with the main
+#'Clones. Defaults to \code{TRUE} if
+#'\code{\link{clusterMetaclones}} has been run.
+#'@return Return \code{TRUE} if \code{\link{clusterMetaclones}} has
+#'been run otherwise returns the cell by clone matrix of
+#'likelihood associating each cell to a given clone.
+#'@examples load(system.file("extdata/LudwigFig7.Rda",package =
+#'"mitoClone2"))
 #'likelihood_matrix <- getCloneLikelihood(LudwigFig7)
 #'@export
 getCloneLikelihood <- function(mutcall,
                                mainClones = length(mutcall@mut2clone) > 0)
     mutcall@cell2clone
 
-#' @describeIn getCloneLikelihood Retrieve the most likely clone associate with each cell.
+#' @describeIn getCloneLikelihood Retrieve the most likely clone
+#'associate with each cell.
 getMainClone <-
     function(mutcall,
              mainClones = length(mutcall@mut2clone) > 0)
@@ -183,23 +213,30 @@ getMainClone <-
             which.max
         ))
 
-#' @describeIn getCloneLikelihood Retrieve the likelihood of the most likely clone for each cell.
+#' @describeIn getCloneLikelihood Retrieve the likelihood of the most
+#'likely clone for each cell.
 getConfidence <-
     function(mutcall,
              mainClones = length(mutcall@mut2clone) > 0)
-        as.factor(apply(getCloneLikelihood(mutcall, mainClones = mainClones), 1, max))
+        as.factor(apply(getCloneLikelihood(mutcall,mainClones = mainClones),
+                        1,
+                        max))
 
-#' @describeIn getCloneLikelihood Retrieve the assignment of mutations to clones, once \code{\link{clusterMetaclones}} has been run.
+#' @describeIn getCloneLikelihood Retrieve the assignment of mutations
+#'to clones, once \code{\link{clusterMetaclones}} has been run.
 getMut2Clone <- function(mutcall)
     mutcall@mut2clone
 
-#'mutationCalls cluster accessors
+#'mutationCalls cluster accessor
 #'
-#'Extracts all the putative variants that we want to use for clustering
+#'Extracts all the putative variants that we want to use for
+#' clustering
 #'@param mutcall object of class \code{\link{mutationCalls}}.
-#'@examples load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
+#'@examples load(system.file("extdata/LudwigFig7.Rda",package =
+#'"mitoClone2"))
 #'mutations_to_cluster <- getVarsCandidate(LudwigFig7)
-#'@return Returns a character vector including all the variants to be used for clustering
+#'@return Returns a character vector including all the variants to be
+#'used for clustering
 #'@export
 getVarsCandidate <- function(mutcall)
     mutcall@cluster
@@ -208,8 +245,10 @@ getVarsCandidate <- function(mutcall)
 #'
 #'Sets the putative variants that we want to use for clustering
 #'@param mutcall object of class \code{\link{mutationCalls}}.
-#'@param varlist vector of booleans with the names set to the variants to use for clustering
-#'@examples load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
+#'@param varlist vector of booleans with the names set to the variants
+#'to use for clustering
+#'@examples load(system.file("extdata/LudwigFig7.Rda",package =
+#'"mitoClone2"))
 #'mutations_to_cluster <- getVarsCandidate(LudwigFig7)
 #'mutations_to_cluster[] <- rep(c(TRUE,FALSE),each=19)
 #'LudwigFig7 <- setVarsCandidate(LudwigFig7,mutations_to_cluster)
@@ -222,9 +261,11 @@ setVarsCandidate <- function(mutcall, varlist) {
 
 #'mutationCalls counts accessor
 #'
-#'Extracts the counts of allele for either the mutant or all the non-mutant alleles
+#'Extracts the counts of allele for either the mutant or all the
+#' non-mutant alleles
 #'@param mutcall object of class \code{\link{mutationCalls}}.
-#'@param type character that is either `mutant` or `nonmutant` depending on which allele count the user wants to access
+#'@param type character that is either `mutant` or `nonmutant`
+#'depending on which allele count the user wants to access
 #'@examples load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
 #'mutantAllele_count <- getAlleleCount(LudwigFig7,type='mutant')
 #'@return Returns matrix of either mutant or non-mutant allele counts

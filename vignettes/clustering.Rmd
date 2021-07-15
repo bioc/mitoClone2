@@ -13,7 +13,13 @@ vignette: >
 library(mitoClone2)
 ```
 
-You should have identified true somatic variants in the mitochondrial (and nuclear) genome. The remaining vignettes of this package document how to get there. Here, we start with count matrices of the alternative and the reference alleles, across a number of sites of interest. Such data is available from two patients (P1, P2) as part of this package. Only P1 is analyzed as part of this vignette but the commented code for P2 should be fully functional.
+You should have identified true somatic variants in the mitochondrial
+(and nuclear) genome. The remaining vignettes of this package document
+how to get there. Here, we start with count matrices of the alternative
+and the reference alleles, across a number of sites of interest. Such
+data is available from two patients (P1, P2) as part of this package.
+Only P1 is analyzed as part of this vignette but the commented code
+for P2 should be fully functional.
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -30,32 +36,50 @@ load(system.file("extdata/N_P1.RData",package = "mitoClone2"))
 P1 <- mutationCallsFromMatrix(as.matrix(M_P1), as.matrix(N_P1))
 ```
 
-A first important step is to decide which mutations to include in the clustering. The default is to use all mutations that are covered in at least 20% of the cells, but this assignment can be changed manually.
+A first important step is to decide which mutations to include in the
+clustering. The default is to use all mutations that are covered in at
+least 20% of the cells, but this assignment can be changed manually.
 
 
 ## Compute a phylogenetic tree
 
-The next step is to run [SCITE](https://github.com/cbg-ethz/SCITE) or [PhISCS](https://github.com/sfu-compbio/PhISCS) to compute the most likely phylogenetic tree. PhISCS is bundled in this package, but the package needs to be run in an environment where [gurobi](https://www.gurobi.com) and the `gurobipy` python package are available. For example, you could set up a `conda` environment that contains this package. Please be sure to set the *python_env* variable appropriately for accessing your installation of gurobipy. SCITE does not require any additional licenses but may need to be manually compiled.
+The next step is to run [SCITE](https://github.com/cbg-ethz/SCITE) or
+[PhISCS](https://github.com/sfu-compbio/PhISCS) to compute the most likely
+phylogenetic tree. PhISCS is bundled in this package, but the package needs
+to be run in an environment where [gurobi](https://www.gurobi.com) and the
+`gurobipy` python package are available. For example, you could set up a
+`conda` environment that contains this package. SCITE does not require any
+additional licenses but may need to be manually compiled.
 
 ```{r runTreebuilding, message=FALSE}
 ## this next step takes approx 4.1 minutes to run
-## Given a lack of dynamic tempfolder creation, this step has been commented out. However, if you have an appropriate tempdir set this command can be run manually.
 tmpd <- tempdir()
 dir.create(paste0(tmpd,'/p1'))
 P1 <- varCluster(P1, tempfolder=paste0(tmpd,'/p1'),method='SCITE')
 ```
 
-This step can take a while to run. It computes a likely phylogenetic tree of all the mutations. In the case of SCITE, multiple equally likely tree can be produced. In it's current state, this package simply selects the first tree from the list.
+This step can take a while to run. It computes a likely phylogenetic tree of
+all the mutations. In the case of SCITE, multiple equally likely tree can be
+produced. In it's current state, this package simply selects the first tree
+from the list.
 
 ## Identify clones and assign cells to clones
 
-In many cases, the order of the leaves on these trees is arbitrary, because mutations systematically co-occur. We  therefore cluster the mutations into clones. In detail, we take every every branch on the tree and then shuffle the order of mutations in that branch while re-calculating the likelihood. If swapping nodes leads to small changes in the likelihood, these nodes are then merged into a "clone". The parameter `min.lik` that controls the merging is set arbitrarily, see below for more information. 
+In many cases, the order of the leaves on these trees is arbitrary, because
+mutations systematically co-occur. We  therefore cluster the mutations into
+clones. In detail, we take every every branch on the tree and then shuffle
+the order of mutations in that branch while re-calculating the likelihood.
+If swapping nodes leads to small changes in the likelihood, these nodes
+are then merged into a "clone". The parameter `min.lik` that controls
+the merging is set arbitrarily, see below for more information. 
 
 ```{r clusterClonesP1, fig.width=8,fig.height=6}
 P1 <- clusterMetaclones(P1, min.lik = 1)
 ```
 
-This step also assigns each cell to the most likely clone, and provides an estimate of the likelihood. Refer to `help(mutationCalls)` for more info on how these results are stored.
+This step also assigns each cell to the most likely clone, and provides an
+estimate of the likelihood. Refer to `help(mutationCalls)` for more info
+on how these results are stored.
 
 Finally, the clustering can be plotted.
 
@@ -65,13 +89,22 @@ plotClones(P1)
 
 ## Parameter choice
 
-The parameter `min.lik` that controls the merging is set arbitrarily. In practice, the goal of these analyses is to group mutations into clones for subsequent analyses (such as differential expression analyses) and it may make sense to overwrite the result of `clusterMetaclones` manually; for example, if a subclone defned on a mitochondrial mutation only should be treated as part of a more clearly defined upstream clone for differential expression analysis.
+The parameter `min.lik` that controls the merging is set arbitrarily. In
+practice, the goal of these analyses is to group mutations into clones
+for subsequent analyses (such as differential expression analyses) and
+it may make sense to overwrite the result of `clusterMetaclones` manually;
+for example, if a subclone defned on a mitochondrial mutation only should
+be treated as part of a more clearly defined upstream clone for
+differential expression analysis.
 
-To overwrite the result of `clusterMetaclones`, first retrieve the assignment of mutations to clones:
+To overwrite the result of `clusterMetaclones`, first retrieve the
+assignment of mutations to clones:
 ```{r getmut2clone, fig.width=8,fig.height=6}
 m2c <- mitoClone2:::getMut2Clone(P1)
 print(m2c)
-##To e.g. treat the mt:2537G>A and mt:14462:G>A mutations as a subclone distinct from CEBPA, we can assign a new clonal identity to them while respecting the hierarchy:
+
+##To e.g. treat the mt:2537G>A and mt:14462:G>A mutations as a subclone
+##distinct from CEBPA, we can assign them a new clonal identity
 m2c[c("X2537GA","X14462GA")] <- as.integer(6)
 
 P1.new <- mitoClone2:::overwriteMetaclones(P1, m2c)

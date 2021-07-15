@@ -1,3 +1,5 @@
+<!-- Author: Katharina Jahn --!>
+
 # SCITE
 ========
 
