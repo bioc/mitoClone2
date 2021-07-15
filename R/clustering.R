@@ -643,7 +643,7 @@ mitoPlot <- function(variants,
     }
     ## prepare to plot
     legendPos <- ifelse(showLegend, "top", "none")
-    p <- ggplot2::ggplot(data=subset(plot.df,plot.df$type == 'mito'), ggplot2::aes(x = start, y=12, color=plot.df$gene)) +
+    p <- ggplot2::ggplot(data=subset(plot.df,plot.df$type == 'mito'), ggplot2::aes(x = start, y=12, color=subset(plot.df,plot.df$type == 'mito')$gene)) +
       ggplot2::geom_hline(yintercept=12, color = "black",alpha=1) +
       ggplot2::geom_line(size=4) +
       ggplot2::theme_void(base_size=24) + ggplot2::xlab('') +
